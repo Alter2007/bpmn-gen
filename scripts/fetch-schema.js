@@ -43,6 +43,21 @@ function get(url, depth) {
 
 async function main() {
   if (!fs.existsSync(OUT)) fs.mkdirSync(OUT, { recursive: true });
+
+  const force = process.argv.indexOf('--force') !== -1;
+  const missing = FILES.filter((f) => {
+    const p = path.join(OUT, f);
+    return !fs.existsSync(p) || fs.statSync(p).size === 0;
+  });
+
+  // 已有缓存就不联网：让验证管线在断网时也能跑
+  if (missing.length === 0 && !force) {
+    console.log('BPMN 2.0 XSD 已缓存（' + FILES.length + ' 个文件），跳过下载');
+    console.log('  目录: ' + OUT);
+    console.log('  需要重新下载: node scripts/fetch-schema.js --force');
+    process.exit(0);
+  }
+
   console.log('下载 BPMN 2.0 XSD -> ' + OUT);
   let ok = 0;
   for (const f of FILES) {
