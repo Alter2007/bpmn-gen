@@ -342,14 +342,24 @@ function runScriptHygiene() {
 
   // 只检查本项目的脚本：工作区根启动器 + bpmn-gen + _env
   // （工作区里还有别的目录，不属于本项目，不能一起判罚）
-  for (const f of fs.readdirSync(ws)) {
+  // 注意：ws（仓库上一级）在 CI 上只是 github runner 的临时目录，
+  //       既没有 _env 也没有根启动器 —— 这些是本地工作区才有的东西，必须容忍缺失。
+  const topFiles = (() => {
+    try { return fs.readdirSync(ws); } catch (e) { return []; }
+  })();
+  for (const f of topFiles) {
     const p = path.join(ws, f);
-    if (!fs.statSync(p).isFile()) continue;
+    try {
+      if (!fs.statSync(p).isFile()) continue;
+    } catch (e) {
+      continue;
+    }
     if (f.endsWith('.cmd')) cmdFiles.push(p);
     if (f.endsWith('.ps1')) ps1Files.push(p);
   }
   walk(root);
-  walk(path.join(ws, '_env'));
+  const envDir = path.join(ws, '_env');
+  if (fs.existsSync(envDir)) walk(envDir);
 
   check('扫描到 .cmd 文件', cmdFiles.length > 0, '数量 ' + cmdFiles.length);
   for (const f of cmdFiles) {
