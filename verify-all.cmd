@@ -24,7 +24,7 @@ echo.
 echo [3/6] official OMG XSD validation ...
 set XSDDIR=..\.cache\schema\bpmn20
 set COUNT=0
-for %%f in ("..\.data\out\*.bpmn") do (
+for %%f in ("..\.data\verify\*.bpmn") do (
   java -Dfile.encoding=UTF-8 "tools\xsd-validate\Validate.java" "%%f" "%XSDDIR%"
   if errorlevel 1 goto fail
   set /a COUNT+=1
@@ -40,7 +40,7 @@ echo.
 echo [5/6] Flowable engine parse + process validation ...
 set JARDIR=..\.cache\flowable
 set ARGS=
-for %%f in ("..\.data\out\*.bpmn") do set ARGS=!ARGS! "%%f"
+for %%f in ("..\.data\verify\*.bpmn") do set ARGS=!ARGS! "%%f"
 java -Dfile.encoding=UTF-8 -Dstdout.encoding=UTF-8 -cp "%JARDIR%\*" "tools\flowable-check\FlowableCheck.java" !ARGS!
 if errorlevel 1 goto fail
 
@@ -49,7 +49,7 @@ echo [6/6] L4 real instance run (deploy + execute + path assertions) ...
 node scripts\fetch-flowable-engine.js
 if errorlevel 1 goto fail
 set RUNJARS=..\.cache\flowable-engine
-set OUTDIR=..\.data\out
+set OUTDIR=..\.data\verify
 java -Dfile.encoding=UTF-8 -Dstdout.encoding=UTF-8 -cp "%RUNJARS%\*" "tools\flowable-run\FlowableRun.java" ^
   "%OUTDIR%\travel-expense.bpmn|amount=800|expect=Task_Submit>Task_Manager" ^
   "%OUTDIR%\travel-expense.bpmn|amount=2500|expect=Task_Submit>Task_Director" ^

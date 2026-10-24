@@ -19,7 +19,8 @@ const { generateFromText, loadTemplates, buildFromTemplate } = require('../src/n
 const CASES = path.join(__dirname, 'cases');
 const BAD = path.join(__dirname, 'cases-bad');
 const REPAIRABLE = path.join(__dirname, 'cases-repairable');
-const OUT = path.join(__dirname, '..', '..', '.data', 'out');
+// 验证产物单独放 .data\verify：不要和用户自己的流程混在 .data\out 里
+const OUT = path.join(__dirname, '..', '..', '.data', 'verify');
 
 let pass = 0;
 let fail = 0;

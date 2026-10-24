@@ -30,7 +30,7 @@
 
 **为什么**：这是唯一能靠 `Remove-Item -Recurse` 一键回滚的边界。一旦有文件写到 `%APPDATA%` 或系统 Temp，回滚就从"删一个文件夹"变成"翻注册表和临时目录猜哪坨是我的"。
 
-**落实**：缓存路径全部由环境变量注入（`_env\dev-shell.ps1`），不写配置文件；产物统一输出到 `.data\out\`。
+**落实**：缓存路径全部由环境变量注入（`_env\dev-shell.ps1`），不写配置文件；用户产物输出到 `.data\out\`，验证产物单独放 `.data\verify\`（两者不混）。
 
 **检验**：`P-01` —— 扫描源码，出现 `APPDATA` / `LOCALAPPDATA` / `Program Files` / `os.tmpdir` 即红灯。
 
@@ -139,7 +139,7 @@
 
 **为什么**：这是"没污染"的唯一可验证定义。说"我很干净"没用，得能证明。
 
-**落实**：`.gitignore` 排除 `node_modules` / `.data` / `*.bpmn`；产物只写 `.data\out\`；交付前跑 `env-guard.cmd`。
+**落实**：`.gitignore` 排除 `node_modules` / `.data` / `*.bpmn`；产物只写 `.data\out\`（用户流程）与 `.data\verify\`（验证产物）；交付前跑 `env-guard.cmd`。
 
 **检验**：`P-09` —— `.gitignore` 必须覆盖产物目录，且项目内不得存在 `.bpmn` 文件。
 

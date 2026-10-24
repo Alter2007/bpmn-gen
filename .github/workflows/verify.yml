@@ -63,7 +63,7 @@ jobs:
         shell: cmd
         run: |
           if not exist ci-artifacts mkdir ci-artifacts
-          if exist "..\.data\out\*.bpmn" copy /y "..\.data\out\*.bpmn" ci-artifacts\ >nul
+          if exist "..\.data\out\*.bpmn" copy /y "..\.data\verify\*.bpmn" ci-artifacts\ >nul
           dir /b ci-artifacts
 
       - name: 失败时上传生成物

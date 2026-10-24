@@ -2,7 +2,7 @@
 'use strict';
 /**
  * 分支覆盖自动化：
- *   对每个模板生成一份 BPMN（写入 .data/out/cov-<id>.bpmn），
+ *   对每个模板生成一份 BPMN（写入 .data/verify/cov-<id>.bpmn），
  *   再根据 artifacts.cases 里算好的分支样例值，生成 FlowableRun 的实例断言。
  *
  * 产出的 specs 文件每行一条：<bpmn 路径>|<变量赋值>|expectcontains=<目标节点 id>
@@ -18,9 +18,9 @@ const { loadTemplates, buildFromTemplate } = require('../src/nl');
 const { runPipeline } = require('../src/pipeline');
 const { buildArtifacts } = require('../src/artifacts');
 
-const OUT = path.join(__dirname, '..', '..', '.data', 'out');
+const OUT = path.join(__dirname, '..', '..', '.data', 'verify');
 // 规格里的路径要能被 FlowableRun 解析：它按当前工作目录（项目根）相对定位
-const SPEC_PREFIX = '..\\.data\\out\\';
+const SPEC_PREFIX = '..\\.data\\verify\\';
 const SPEC_OUT = path.join(OUT, 'coverage-specs.txt');
 const onlyPrint = process.argv.indexOf('--print') !== -1;
 
