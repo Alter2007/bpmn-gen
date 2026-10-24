@@ -359,7 +359,9 @@ function generateFromText(text, opts) {
     warnings.push('你只描述了一个阈值（' + values.tier1 + '），模板需要两档；第二档先按 ' + values.tier2 +
       ' 估算，请在图上核对');
   }
-  if (extraNums.length > 0) {
+  if (extraNums.length > 0 && order.length > 0) {
+    // 模板本来就不收数值时（如会签模板），用户顺口说的"一人/三天"不算超纲，
+    // 别弹"多出的 X 没有生成"这种噪音提示。
     warnings.push('你一共提到了 ' + nums.length + ' 个阈值（' + nums.join('、') + '），但模板「' +
       (chosen.name || chosen.templateId) + '」只支持 ' + order.length + ' 个，多出的 ' +
       extraNums.join('、') + ' 没有生成');
