@@ -139,17 +139,22 @@ const MIN_SCORE = 4;
 const MARGIN = 2;
 const CONFIDENCE_THRESHOLD = 0.7;
 
-function buildCandidates(ranked, limit) {
+function buildCandidates(ranked, limit, templates) {
+  // 用模板库兜底查名字：业务人员看到的必须是中文名，不能是 amount_tiered 这种 ID
+  const byId = new Map((templates || []).map((t) => [t.templateId, t]));
   return (ranked || [])
     .filter((r) => r && r.score > 0)
     .slice(0, limit || 3)
-    .map((r) => ({
-      templateId: r.templateId,
-      name: r.name,
-      description: (r.template && r.template.description) || '',
-      score: r.score,
-      hits: r.hits || []
-    }));
+    .map((r) => {
+      const t = byId.get(r.templateId) || r.template || {};
+      return {
+        templateId: r.templateId,
+        name: t.name || r.name || r.templateId,
+        description: t.description || '',
+        score: r.score,
+        hits: r.hits || []
+      };
+    });
 }
 
 function clarifyPayload(question, candidates, extra) {
@@ -175,7 +180,8 @@ async function handleGenerate(body) {
   const templates = loadTemplates();
   const cfg = currentConfig();
   const wantOffline = body.mode === 'offline' || !cfg.hasKey;
-  const pick = String(body.pickTemplate || '').trim();
+  // 只接受字符串：前端把事件对象漏进来时，不能被当成模板 ID（会报 [object Object]）
+  const pick = typeof body.pickTemplate === 'string' ? body.pickTemplate.trim() : '';
 
   const meta = {
     mode: wantOffline ? 'offline' : 'llm',
@@ -221,7 +227,7 @@ async function handleGenerate(body) {
         (second && second.score > 0 && top.score - second.score < MARGIN);
 
       if (unsure && ranked.length > 0) {
-        const cands = buildCandidates(ranked, 3);
+        const cands = buildCandidates(ranked, 3, templates);
         if (cands.length === 0) {
           // 一个关键词都没命中：给不出候选，直接让人补充描述
           return {
@@ -268,7 +274,7 @@ async function handleGenerate(body) {
       const conf = typeof parsed.confidence === 'number' ? parsed.confidence : 1;
       if (conf < CONFIDENCE_THRESHOLD) {
         const ranked = require('../src/nl').rankTemplates(text, templates);
-        const cands = buildCandidates(ranked, 3);
+        const cands = buildCandidates(ranked, 3, templates);
         const modelPick = {
           templateId: parsed.templateId,
           name: (templates.find((t) => t.templateId === parsed.templateId) || {}).name || parsed.templateId,

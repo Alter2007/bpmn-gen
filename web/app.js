@@ -245,14 +245,17 @@
     (res.candidates || []).forEach(function (c) {
       var b = document.createElement('button');
       b.className = 'clarify-opt';
+      var hitLine = (c.hits && c.hits.length)
+        ? '<span class="co-hit">识别到：' + esc(c.hits.join('、')) + '</span>'
+        : '';
       b.innerHTML = '<span class="co-name">' + esc(c.name || c.templateId) + '</span>' +
-        '<span class="co-desc">' + esc(c.description || '') + '</span>';
+        '<span class="co-desc">' + esc(c.description || '') + '</span>' + hitLine;
       b.title = '点击按「' + (c.name || c.templateId) + '」生成';
       b.addEventListener('click', function () { generate(c.templateId); });
       els.clarifyOpts.appendChild(b);
     });
     els.clarify.hidden = false;
-    toast('不太确定，先确认一下场景');
+    toast('不太确定，请选一个最接近的');
   }
 
   function generate(pick) {
@@ -319,7 +322,8 @@
     });
   }
 
-  els.btnGenerate.addEventListener('click', generate);
+  // 注意：不能直接写 addEventListener('click', generate)，否则点击事件对象会被当成 pick 参数
+  els.btnGenerate.addEventListener('click', function () { generate(); });
   els.desc.addEventListener('keydown', function (e) {
     if (e.key === 'Enter') generate();
   });
