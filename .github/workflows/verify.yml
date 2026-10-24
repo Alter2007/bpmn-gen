@@ -34,41 +34,9 @@ jobs:
           distribution: temurin
           java-version: '17'
 
-      # 验证脚本把 Flowable jar / OMG XSD 下载到"仓库上一级"的 .cache。
-      # 先把目录建出来：actions/cache 遇到不存在的路径会直接报 Path Validation Error。
-      - name: 准备缓存目录
-        shell: cmd
-        run: |
-          if not exist "%~dp0..\.cache" mkdir "%~dp0..\.cache"
-          echo cache dir ready
-
-      # 用 restore/save 分离：restore 不会因为"没命中"而失败
-      - name: 恢复 Flowable jar 与 XSD 缓存
-        id: cache-restore
-        uses: actions/cache/restore@v4
-        with:
-          path: ${{ github.workspace }}/../.cache
-          key: ${{ runner.os }}-bpmn-${{ hashFiles('scripts/fetch-flowable.js', 'scripts/fetch-flowable-engine.js', 'scripts/fetch-schema.js') }}
-          restore-keys: |
-            ${{ runner.os }}-bpmn-
-
-      - name: 版本诊断
-        shell: cmd
-        run: |
-          node --version
-          java -version
-          echo 工作目录: %CD%
-
       - name: 六层验证
         shell: cmd
         run: verify-all.cmd
-
-      - name: 保存 Flowable jar 与 XSD 缓存
-        if: always() && steps.cache-restore.outputs.cache-hit != 'true'
-        uses: actions/cache/save@v4
-        with:
-          path: ${{ github.workspace }}/../.cache
-          key: ${{ runner.os }}-bpmn-${{ hashFiles('scripts/fetch-flowable.js', 'scripts/fetch-flowable-engine.js', 'scripts/fetch-schema.js') }}
 
       - name: 失败时上传生成物
         if: failure()
