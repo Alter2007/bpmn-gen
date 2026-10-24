@@ -35,6 +35,7 @@
     clarifyOpts: $('clarify-opts'),
     btnDoc: $('btn-doc'),
     btnForm: $('btn-form'),
+    btnSvg: $('btn-svg'),
     sideModel: $('side-model'),
     sideProvider: $('side-provider'),
     sideDot: $('side-dot'),
@@ -284,6 +285,7 @@
       state.artifacts = res.artifacts || null;
       els.btnCopy.disabled = false;
       els.btnDownload.disabled = false;
+      if (els.btnSvg) els.btnSvg.disabled = false;
       if (els.btnDoc) els.btnDoc.disabled = !state.artifacts;
       if (els.btnForm) els.btnForm.disabled = !state.artifacts;
 
@@ -435,6 +437,29 @@
     setTimeout(function () { URL.revokeObjectURL(a.href); }, 1500);
   }
 
+  // 导出矢量图：bpmn-js 自带 saveSVG，图放进 Word/PDF 也不会糊
+  if (els.btnSvg) {
+    els.btnSvg.addEventListener('click', function () {
+      if (!viewer || !state.xml) return;
+      var finish = function (svg) {
+        var base = (state.file || 'process.bpmn').replace(/\.bpmn$/i, '');
+        downloadText(svg, base + '.svg', 'image/svg+xml;charset=utf-8');
+        toast('已下载 SVG（矢量图，可直接放进文档）');
+      };
+      try {
+        var r = viewer.saveSVG({ format: true });
+        if (r && typeof r.then === 'function') {
+          r.then(function (res) {
+            finish(typeof res === 'string' ? res : res.svg);
+          }).catch(function (e) { toast('SVG 导出失败：' + (e && e.message ? e.message : e), true); });
+        } else {
+          finish(typeof r === 'string' ? r : (r && r.svg) || '');
+        }
+      } catch (e) {
+        toast('SVG 导出失败：' + (e && e.message ? e.message : e), true);
+      }
+    });
+  }
   if (els.btnDoc) {
     els.btnDoc.addEventListener('click', function () {
       if (!state.artifacts) return;

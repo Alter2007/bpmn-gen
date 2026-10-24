@@ -1,0 +1,47 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg xmlns="http://www.w3.org/2000/svg" width="964" height="468" viewBox="136 76 964 468" font-family="Microsoft YaHei, Segoe UI, sans-serif">
+<rect x="136" y="76" width="964" height="468" fill="#ffffff"/>
+<path d="M196,280 L380,280" fill="none" stroke="#4e5969" stroke-width="1.4"/>
+<polygon points="380,280 371.0,275.5 371.0,284.5" fill="#4e5969"/>
+<path d="M480,280 L600,280" fill="none" stroke="#4e5969" stroke-width="1.4"/>
+<polygon points="600,280 591.0,275.5 591.0,284.5" fill="#4e5969"/>
+<path d="M650,280 L735,280 L735,140 L820,140" fill="none" stroke="#4e5969" stroke-width="1.4"/>
+<polygon points="820,140 811.0,135.5 811.0,144.5" fill="#4e5969"/>
+<text x="735.0" y="202.0" font-size="11" fill="#86909c" text-anchor="middle">≤1000</text>
+<path d="M650,280 L820,280" fill="none" stroke="#4e5969" stroke-width="1.4"/>
+<polygon points="820,280 811.0,275.5 811.0,284.5" fill="#4e5969"/>
+<text x="735.0" y="272.0" font-size="11" fill="#86909c" text-anchor="middle">1000~5000</text>
+<path d="M650,280 L735,280 L735,420 L820,420" fill="none" stroke="#4e5969" stroke-width="1.4"/>
+<polygon points="820,420 811.0,415.5 811.0,424.5" fill="#4e5969"/>
+<text x="735.0" y="342.0" font-size="11" fill="#86909c" text-anchor="middle">&amp;gt;5000</text>
+<path d="M920,140 L980,140 L980,280 L1040,280" fill="none" stroke="#4e5969" stroke-width="1.4"/>
+<polygon points="1040,280 1031.0,275.5 1031.0,284.5" fill="#4e5969"/>
+<path d="M920,280 L1040,280" fill="none" stroke="#4e5969" stroke-width="1.4"/>
+<polygon points="1040,280 1031.0,275.5 1031.0,284.5" fill="#4e5969"/>
+<path d="M920,420 L980,420 L980,280 L1040,280" fill="none" stroke="#4e5969" stroke-width="1.4"/>
+<polygon points="1040,280 1031.0,275.5 1031.0,284.5" fill="#4e5969"/>
+<path d="M870,180 L870,300 L430,300 L430,240" fill="none" stroke="#4e5969" stroke-width="1.4"/>
+<polygon points="430,240 425.5,249.0 434.5,249.0" fill="#4e5969"/>
+<text x="680.0" y="292.0" font-size="11" fill="#86909c" text-anchor="middle">驳回</text>
+<path d="M870,320 L870,380 L430,380 L430,240" fill="none" stroke="#4e5969" stroke-width="1.4"/>
+<polygon points="430,240 425.5,249.0 434.5,249.0" fill="#4e5969"/>
+<text x="610.0" y="372.0" font-size="11" fill="#86909c" text-anchor="middle">驳回</text>
+<path d="M870,460 L870,520 L430,520 L430,240" fill="none" stroke="#4e5969" stroke-width="1.4"/>
+<polygon points="430,240 425.5,249.0 434.5,249.0" fill="#4e5969"/>
+<text x="540.0" y="512.0" font-size="11" fill="#86909c" text-anchor="middle">驳回</text>
+<circle cx="178" cy="280" r="18" fill="#ffffff" stroke="#1d2129" stroke-width="2"/>
+<text x="178" y="312" font-size="11" fill="#86909c" text-anchor="middle">发起报销</text>
+<rect x="380" y="240" width="100" height="80" rx="8" fill="#ffffff" stroke="#1d2129" stroke-width="1.4"/>
+<text x="430" y="284" font-size="12" fill="#1d2129" text-anchor="middle">提交报销单</text>
+<polygon points="625,255 650,280 625,305 600,280" fill="#ffffff" stroke="#1d2129" stroke-width="1.6"/>
+<path d="M618,280 L632,280 M625,273 L625,287" stroke="#1d2129" stroke-width="2.2"/>
+<text x="625" y="319" font-size="11" fill="#86909c" text-anchor="middle">报销金额判断</text>
+<rect x="820" y="100" width="100" height="80" rx="8" fill="#ffffff" stroke="#1d2129" stroke-width="1.4"/>
+<text x="870" y="144" font-size="12" fill="#1d2129" text-anchor="middle">主管审批</text>
+<rect x="820" y="240" width="100" height="80" rx="8" fill="#ffffff" stroke="#1d2129" stroke-width="1.4"/>
+<text x="870" y="284" font-size="12" fill="#1d2129" text-anchor="middle">总监审批</text>
+<rect x="820" y="380" width="100" height="80" rx="8" fill="#ffffff" stroke="#1d2129" stroke-width="1.4"/>
+<text x="870" y="424" font-size="12" fill="#1d2129" text-anchor="middle">财务复核</text>
+<circle cx="1058" cy="280" r="18" fill="#ffffff" stroke="#1d2129" stroke-width="3.5"/>
+<text x="1058" y="312" font-size="11" fill="#86909c" text-anchor="middle">审批完成</text>
+</svg>

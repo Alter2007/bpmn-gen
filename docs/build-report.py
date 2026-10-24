@@ -7,7 +7,7 @@
 
 import os
 from docx import Document
-from docx.shared import Pt, Cm, RGBColor
+from docx.shared import Pt, Cm, Inches, RGBColor
 from docx.enum.text import WD_ALIGN_PARAGRAPH
 from docx.enum.table import WD_TABLE_ALIGNMENT
 from docx.oxml import OxmlElement
@@ -268,10 +268,10 @@ table(
         ["L1 良构", "标签配对、根元素唯一、CDATA 完整", "自研 xml-lint", "通过"],
         ["L0 契约", "字段类型、id 唯一、自环、默认流唯一", "src/ir.js", "通过"],
         ["L3 图论", "起止唯一、悬挂节点、不可达、死路、网关默认流、并行网关不带条件", "src/graph.js", "通过"],
-        ["L2 规范", "是否符合 BPMN 2.0 官方 schema", "OMG XSD + JDK 17 校验器", "85 / 85 文件"],
-        ["L2b 模型", "模型能否被标准库建出来", "第三方 bpmn-moddle", "85 / 85 文件"],
-        ["L4-lite 引擎", "引擎能否解析并通过流程校验", "Flowable 7.2.0 官方组件", "85 / 85 文件"],
-        ["L4 实例运行", "真实部署 + 启动实例 + 路径断言", "Flowable + H2 内存引擎", "12 / 12 场景"],
+        ["L2 规范", "是否符合 BPMN 2.0 官方 schema", "OMG XSD + JDK 17 校验器", "119 / 119 文件"],
+        ["L2b 模型", "模型能否被标准库建出来", "第三方 bpmn-moddle", "119 / 119 文件"],
+        ["L4-lite 引擎", "引擎能否解析并通过流程校验", "Flowable 7.2.0 官方组件", "119 / 119 文件"],
+        ["L4 实例运行", "真实部署 + 启动实例 + 路径断言", "Flowable + H2 内存引擎", "69 / 69 断言"],
     ],
     widths=[2.2, 7.4, 4.4, 2.6],
 )
@@ -341,7 +341,7 @@ table(
     ["能力", "实现方式", "验证方式"],
     [
         ["审批驳回 / 退回", "BPMN 回边：通过设为默认流，驳回走 approved == false 条件", "第 6 层含 3 条驳回路径断言"],
-        ["15 个审批模板", "纯 JSON 模板库，新增场景只需加一个文件", "每个模板都过六层校验"],
+        ["27 个审批模板", "纯 JSON 模板库，新增场景只需加一个文件", "每个模板都过六层校验"],
         ["交互式澄清", "关键词得分不足或模型置信度低于 0.7 时，列出候选让人确认，不硬生成", "接口返回 needClarify + candidates"],
         ["配套产物", "每次生成同时产出表单定义、流程说明书、分支覆盖用例", "单元测试断言三类产物内容"],
     ],
@@ -353,6 +353,20 @@ p("驳回的工程量集中在三处：自动布局要为回边绕行（否则�
   color=GRAY, size=9.5)
 
 # ============================ 五、创新点 ============================
+doc.add_heading("4.2 生成效果（真实输出）", level=2)
+p("下面两张图由 nl2bpmn 的实际产物渲染而来（直接读 BPMN 的 DI 坐标，不经过浏览器），不是示意图。")
+img_dir = os.path.join(os.path.dirname(os.path.abspath(__file__)), "images")
+for fname, cap in [
+    ("flow-travel-reject.png", "图 1  金额分级审批流：三条金额分支 + 三条驳回回边"),
+    ("flow-multi-sign.png", "图 2  多人会签：人数由 approvers 列表长度决定，流程本身不写死人数"),
+]:
+    fp = os.path.join(img_dir, fname)
+    if os.path.exists(fp):
+        doc.add_picture(fp, width=Inches(6.1))
+        doc.paragraphs[-1].alignment = WD_ALIGN_PARAGRAPH.CENTER
+        p(cap, color=GRAY, size=9)
+    else:
+        p("（缺少图片：" + fname + "）", color=GRAY, size=9)
 doc.add_heading("五、创新点", level=1)
 
 doc.add_heading("5.1 让模型“只说选哪个模板”，而不是“画流程”", level=2)
@@ -387,12 +401,12 @@ p("所有结论都可以在仓库内用一条命令复现：verify-all.cmd", bol
 table(
     ["验证项", "手段", "结果"],
     [
-        ["单元与回归测试", "node test/run.js（正向 / 反向 / 可修复 / 自然语言 / 提示词 / 脚本卫生）", "265 项断言全部通过"],
+        ["单元与回归测试", "node test/run.js（正向 / 反向 / 可修复 / 自然语言 / 提示词 / 脚本卫生）", "267 项断言全部通过"],
         ["大模型端到端", "run-llm-tests.cmd（真实调用 8 条业务描述）", "8 / 8 通过（100%）"],
-        ["BPMN 规范（L2）", "OMG 官方 XSD + JDK 17 单文件校验器", "85 / 85 文件通过"],
-        ["BPMN 模型（L2b）", "第三方 bpmn-moddle", "85 / 85 文件通过"],
-        ["引擎接受（L4-lite）", "Flowable 7.2.0 的 BpmnXMLConverter + ProcessValidator", "85 / 85 文件通过"],
-        ["实例运行（L4）", "Flowable + H2 内存引擎：部署 → 启动实例 → 自动完成任务 → 路径断言", "12 / 12 场景通过"],
+        ["BPMN 规范（L2）", "OMG 官方 XSD + JDK 17 单文件校验器", "119 / 119 文件通过"],
+        ["BPMN 模型（L2b）", "第三方 bpmn-moddle", "119 / 119 文件通过"],
+        ["引擎接受（L4-lite）", "Flowable 7.2.0 的 BpmnXMLConverter + ProcessValidator", "119 / 119 文件通过"],
+        ["实例运行（L4）", "Flowable + H2 内存引擎：部署 → 启动实例 → 自动完成任务 → 路径断言", "69 / 69 断言通过"],
         ["确定性", "同一 IR 连续序列化两次逐字节比对", "完全一致，产物无时间戳"],
     ],
     widths=[3.4, 8.4, 3.7],
@@ -483,7 +497,7 @@ table(
         ["bin/", "两个命令行入口：IR → BPMN、自然语言 → BPMN"],
         ["src/", "生成核心（零依赖）：契约、图论、布局、序列化、修复、提示词"],
         ["src/templates/", "27 个审批流模板（JSON，可直接增删）"],
-        ["test/", "正向 / 反向 / 可修复 / 自然语言用例，共 265 项断言"],
+        ["test/", "正向 / 反向 / 可修复 / 自然语言用例，共 267 项断言"],
         ["tools/", "XSD 校验器、Flowable 引擎校验器（Java 单文件，无需构建工具）"],
         ["web/", "本地 Web 应用（生成 / 模板库 / 验证报告 / 设置）与第三方模型校验"],
         ["docs/", "架构说明、第三方许可清单、本文档"],

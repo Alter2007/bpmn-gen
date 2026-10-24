@@ -5,7 +5,7 @@
 **演示视频**：[B 站 · BV1FvHA6YEyP](https://www.bilibili.com/video/BV1FvHA6YEyP/) —— P1 大模型版（2:14）/ P2 离线模式（2:38）
 （视频录制于 `30b4f85`，展示的是**形态 ① 命令行版**；仓库当前还包含形态 ② 桌面应用版）
 
-**一条命令复现全部验证**：`verify-all.cmd` → 六层全绿（265 项断言 / XSD 85 文件 / 引擎校验 85/85 / 实例运行 12/12）
+**一条命令复现全部验证**：`verify-all.cmd` → 六层全绿（267 项断言 / XSD 119 文件 / 引擎校验 119/119 / 实例运行 69/69）
 
 核心设计思想：**绝不让大模型直接产出 XML**。模型只产出结构化 IR，XML 由确定性代码生成——这样命名空间、id、坐标、标签闭合在物理上就不可能出错。
 
@@ -147,6 +147,20 @@ nl2bpmn.cmd "差旅报销，金额小于1000主管批，超过5000财务复核" 
 
 服务前台运行：不注册系统服务、不建数据库、不写注册表；生成逻辑是同进程 `require` 核心模块完成的，
 不 spawn 子进程（P-04 不破例）。
+
+## 生成效果（真实输出，非示意图）
+
+下面两张图都是 `nl2bpmn.cmd` 的**实际产物**渲染而来（`scripts/bpmn2svg.js` 直接读 BPMN 的 DI 坐标，不依赖浏览器）。
+
+**① 金额分级 + 三条驳回**（「差旅报销，金额小于1000主管批，超过5000财务复核」）：
+
+![金额分级审批流](docs/images/flow-travel-reject.svg)
+
+**② 多人会签**（「多人会签，全部签完才通过」——人数由 `approvers` 列表长度决定）：
+
+![多人会签流程](docs/images/flow-multi-sign.svg)
+
+> 图里的「驳回」就是回边：审批人可以退回发起人重走。这正是很多模板生成工具做不出来的部分。
 
 ## 能力清单（P0 四项已实现，**两种形态都支持**）
 
@@ -304,7 +318,7 @@ run-llm-tests.cmd          :: 8 条用例批量回归，出一次通过率报告
 | L3 图论语义（起止唯一/悬挂/不可达/死路/网关 default/并行不含条件） | `src/graph.js` | ✅ 已实现 |
 | L2 BPMN 规范级（官方 OMG XSD） | `tools/xsd-validate/Validate.java`（JDK 17 单文件运行，零依赖） | ✅ 已实现并实测 |
 | L2b 第三方模型校验（bpmn-moddle） | `web/check-model.js`（与 bpmn-js 同源的标准模型库） | ✅ 16/16 通过 |
-| L4-lite 引擎解析 + 流程校验（Flowable 自己的代码） | `tools/flowable-check/FlowableCheck.java`（jar 按需下载到 `.cache`） | ✅ **85/85 通过** |
+| L4-lite 引擎解析 + 流程校验（Flowable 自己的代码） | `tools/flowable-check/FlowableCheck.java`（jar 按需下载到 `.cache`） | ✅ **119/119 通过** |
 | L4 实例运行（真实部署 + 执行 + 路径断言） | `tools/flowable-run/FlowableRun.java`（Flowable + H2 内存引擎） | ✅ **6/6 通过** |
 
 ## 为什么一定要有 DI
@@ -354,7 +368,7 @@ bpmn-gen/                    73 个文件
 │  ├─ xsd-validate/          L2 OMG 官方 XSD
 │  ├─ flowable-check/        L4-lite 引擎解析与过程校验
 │  └─ flowable-run/          L4 实例运行 + 路径断言
-├─ test/                     265 项断言（正向 / 反向 / 可修复 / 自然语言 / 提示词 / 脚本卫生）
+├─ test/                     267 项断言（正向 / 反向 / 可修复 / 自然语言 / 提示词 / 脚本卫生）
 ├─ scripts/                  零依赖工具（原则检查、批量回归、schema/jar 下载）
 ├─ docs/                     8 份文档
 │  ├─ bpmn-gen-report.pdf    作品介绍（11 页）
@@ -391,12 +405,13 @@ bpmn-gen/                    73 个文件
 
 | # | 层 | 手段 | 结果 |
 |---|---|---|---|
-| 1 | 单元/回归 | `node test\run.js`（正向/反向/可修复/自然语言/提示词/脚本卫生） | ✅ **265 项断言** |
+| 1 | 单元/回归 | `node test\run.js`（正向/反向/可修复/自然语言/提示词/脚本卫生） | ✅ **267 项断言** |
 | 2 | L1 良构 | 自研 `xml-lint.js` | ✅ |
-| 3 | L2 规范 | **OMG 官方 XSD** + JDK 17 单文件校验器 | ✅ **85/85 文件** |
-| 4 | L2b 模型 | **第三方 bpmn-moddle** | ✅ **85/85 文件** |
-| 5 | L4-lite 引擎 | **Flowable 7.2.0** 的 `BpmnXMLConverter` + `ProcessValidator` | ✅ **85/85 文件** |
-| 6 | **L4 实例运行** | **Flowable + H2 内存引擎**：部署 → 启动实例 → 自动完成任务 → **路径断言** | ✅ **12/12 场景** |
+| 3 | L2 规范 | **OMG 官方 XSD** + JDK 17 单文件校验器 | ✅ **119/119 文件** |
+| 4 | L2b 模型 | **第三方 bpmn-moddle** | ✅ **119/119 文件** |
+| 5 | L4-lite 引擎 | **Flowable 7.2.0** 的 `BpmnXMLConverter` + `ProcessValidator` | ✅ **119/119 文件** |
+| 6 | **L4 实例运行** | **Flowable + H2 内存引擎**：部署 → 启动实例 → 自动完成任务 → **路径断言** | ✅ **69/69 断言** |
+| 7 | **分支覆盖** | `scripts/coverage-specs.js` 按模板自动生成断言（每模板：正常走完 + 每条分支） | ✅ **57 条 / 27 模板** |
 | — | 大模型端到端 | `run-llm-tests.cmd`（真实调用 8 条用例） | ✅ 8/8（100%） |
 
 **L4 实测路径（同一文件、不同变量走不同分支）**：

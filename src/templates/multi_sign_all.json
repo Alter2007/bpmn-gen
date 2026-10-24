@@ -41,7 +41,7 @@
     {
       "id": "Task_Sign",
       "type": "userTask",
-      "name": "会签（全部签完才通过）",
+      "name": "多人会签",
       "assignee": "${approver}",
       "multiInstance": {
         "collection": "approvers",

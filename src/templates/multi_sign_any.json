@@ -41,7 +41,7 @@
     {
       "id": "Task_Sign",
       "type": "userTask",
-      "name": "或签（任一人签完即通过）",
+      "name": "或签",
       "assignee": "${approver}",
       "multiInstance": {
         "collection": "approvers",
