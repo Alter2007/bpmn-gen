@@ -708,6 +708,54 @@ function runAssignmentUnit() {
   check('角色组都在映射表里', unknownGroups.length === 0, unknownGroups.slice(0, 5).join(' | '));
 }
 
+// ---------------- 交付包 ----------------
+// 真实交付时 IT 要的是一个目录，不是一个一个下文件。
+function runBundleUnit() {
+  console.log('');
+  console.log('== 交付包（--bundle）==');
+
+  const { buildBundle } = require('../src/bundle');
+  const { buildArtifacts } = require('../src/artifacts');
+
+  const built = buildFromTemplate('amount_tiered', {}, '');
+  const r = runPipeline(built.ir);
+  if (!r.ok) { check('交付包：源流程可用', false, r.errors.join('; ')); return; }
+  const a = buildArtifacts(r.ir, built.template || null);
+
+  const bundle = buildBundle({
+    ir: r.ir,
+    xml: r.xml,
+    artifacts: a,
+    meta: { templateId: 'amount_tiered', sourceText: '测试用一句话', generatedAt: '2026-01-01 00:00' },
+    pipeline: { warnings: r.warnings || [] }
+  });
+
+  const names = bundle.files.map((f) => f.name);
+  const want = ['说明.md', '表单.json', '用例.json', '角色组.json', '部署说明.md', '校验摘要.txt'];
+  check('交付包含 6 个文档', want.every((n) => names.indexOf(n) !== -1), names.join(', '));
+  check('交付包含 .bpmn', names.some((n) => /\.bpmn$/.test(n)), names.join(', '));
+
+  const byName = new Map(bundle.files.map((f) => [f.name, f.content]));
+  const bpmn = bundle.files.filter((f) => /\.bpmn$/.test(f.name))[0];
+  check('交付包里的 .bpmn 与生成结果一致', bpmn && bpmn.content === r.xml);
+
+  const deploy = byName.get('部署说明.md') || '';
+  check('部署说明含流程 Key', deploy.indexOf(r.ir.processKey || r.ir.id) !== -1);
+  check('部署说明列出角色组', deploy.indexOf('role_manager') !== -1 && deploy.indexOf('role_finance') !== -1);
+  check('部署说明含导入步骤', deploy.indexOf('导入') !== -1);
+
+  const roles = JSON.parse(byName.get('角色组.json') || '{}');
+  check('角色组只含本流程用到的组',
+    (roles.groups || []).length === 3 && (roles.groups || []).every((g) => /^role_/.test(g.group)),
+    JSON.stringify((roles.groups || []).map((g) => g.group)));
+
+  const summary = byName.get('校验摘要.txt') || '';
+  check('校验摘要列出本地已做的检查', summary.indexOf('L0 契约') !== -1 && summary.indexOf('L3 图论') !== -1);
+  check('校验摘要不冒充外部检查已通过',
+    summary.indexOf('[外部]') !== -1 && summary.indexOf('L2 规范：OMG 官方 XSD') !== -1 &&
+    !/L2[^\n]*通过/.test(summary));
+}
+
 function main() {
   console.log('BPMN 生成器测试套件');
   console.log('='.repeat(52));
@@ -721,6 +769,7 @@ function main() {
   runTemplateInvariants();
   runLayoutUnit();
   runAssignmentUnit();
+  runBundleUnit();
   runPromptUnit();
   runArtifactsUnit();
   runHelpPageUnit();

@@ -460,6 +460,7 @@ table(
     [
         ["nl2bpmn.cmd \"...\" -o out.bpmn", "离线模板匹配，一句话生成（不需要 Key）"],
         ["ai2bpmn.cmd \"...\" -o out.bpmn", "调用大模型生成（需要 Key）"],
+        ["nl2bpmn.cmd \"...\" -o out.bpmn --bundle", "生成可交付的整个目录（bpmn/说明/表单/用例/角色组/部署说明/校验摘要）"],
         ["bpmn2svg.cmd out.bpmn", "把 BPMN 渲染成 SVG（不开浏览器）"],
         ["verify-all.cmd", "六层验证一次跑完（测试 / XSD / moddle / 引擎 / 实例 / 覆盖）"],
         ["创建桌面快捷方式.cmd", "生成桌面图标，之后双击即可用桌面应用版"],

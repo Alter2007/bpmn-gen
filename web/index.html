@@ -401,6 +401,17 @@
                 <tr><td><b>分支覆盖用例</b>（JSON）</td><td>每个分支一组输入样例 + 预期去向</td><td>测试同学</td></tr>
               </table>
               <p>界面上对应「下载说明」「下载表单」两个按钮；命令行加 <code>--artifacts</code> 会一次落三个文件。</p>
+              <h3>要交给 IT 一个完整的包</h3>
+              <p>命令行加 <code>--bundle</code>，会生成一个目录：</p>
+              <table class="help-table">
+                <tr><th>文件</th><th>给谁</th></tr>
+                <tr><td><code>xxx.bpmn</code></td><td>IT —— 直接导入引擎</td></tr>
+                <tr><td><code>说明.md</code></td><td>业务 —— 节点、分支条件、驳回路径</td></tr>
+                <tr><td><code>表单.json</code> / <code>用例.json</code></td><td>前端 / 测试</td></tr>
+                <tr><td><code>角色组.json</code></td><td>运维 —— 要建哪些组、组里放谁</td></tr>
+                <tr><td><code>部署说明.md</code></td><td>IT —— 流程 Key、建组、导入步骤、启动要传的变量</td></tr>
+                <tr><td><code>校验摘要.txt</code></td><td>评审 —— 这次生成本地做过哪些检查</td></tr>
+              </table>
               <div class="help-tip">用例里的样例值是算出来的：上界条件取「阈值 − 1」，区间取「下界 + 1」，默认流取「最大阈值 + 1」。所以拿来就能跑。</div>
             </article>
 

@@ -30,6 +30,7 @@ function usage() {
   console.log('  --json         只打印生成的 IR（调试用）');
   console.log('  --verbose      打印匹配过程与槽位填充明细');
   console.log('  --artifacts    额外输出配套产物：说明(.md) / 表单(.json) / 分支用例(.json)');
+  console.log('  --bundle       输出交付包目录（.bpmn + 说明 + 表单 + 用例 + 角色组 + 部署说明 + 校验摘要）');
   console.log('');
   console.log('退出码: 0 成功 / 2 失败');
 }
@@ -49,6 +50,7 @@ function main() {
   let verbose = false;
   let list = false;
   let artifacts = false;
+  let bundle = false;
 
   for (let i = 0; i < argv.length; i++) {
     const a = argv[i];
@@ -58,6 +60,7 @@ function main() {
     else if (a === '--json') jsonOnly = true;
     else if (a === '--verbose') verbose = true;
     else if (a === '--artifacts') artifacts = true;
+    else if (a === '--bundle') bundle = true;
     else if (a === '--list') list = true;
     else if (!text) text = a;
   }
@@ -142,6 +145,9 @@ function main() {
   }
 
   const outPath = output || defaultOutPath(g.templateId + '.bpmn');
+  // 输出目录不存在时自建（否则 -o 指向新目录会直接 ENOENT）
+  const outDirPath = path.dirname(outPath);
+  if (!fs.existsSync(outDirPath)) fs.mkdirSync(outDirPath, { recursive: true });
   fs.writeFileSync(outPath, r.xml, 'utf8');
 
   console.log('[OK] ' + r.ir.name);
@@ -159,6 +165,26 @@ function main() {
     fs.writeFileSync(base + '-用例.json', JSON.stringify(a.cases, null, 2) + '\n', 'utf8');
     console.log('     配套: ' + path.basename(base) + '-说明.md / -表单.json / -用例.json' +
       '（' + a.cases.total + ' 条分支用例）');
+  }
+  // 交付包：一个目录交给 IT 同事（.bpmn + 说明 + 表单 + 用例 + 角色组 + 部署说明 + 校验摘要）
+  if (bundle) {
+    const { writeBundle } = require('../src/bundle');
+    const { buildArtifacts } = require('../src/artifacts');
+    const a = buildArtifacts(r.ir, g.template || null);
+    const outDir = output ? path.dirname(output) : path.join(__dirname, '..', '..', '.data', 'out');
+    const stamp = new Date();
+    const pad = function (x) { return String(x).padStart(2, '0'); };
+    const generatedAt = stamp.getFullYear() + '-' + pad(stamp.getMonth() + 1) + '-' + pad(stamp.getDate()) +
+      ' ' + pad(stamp.getHours()) + ':' + pad(stamp.getMinutes());
+    const res = writeBundle({
+      ir: r.ir,
+      xml: r.xml,
+      artifacts: a,
+      meta: { templateId: g.templateId, sourceText: text, generatedAt: generatedAt },
+      pipeline: { warnings: r.warnings || [] }
+    }, outDir);
+    console.log('     交付包: ' + path.resolve(res.dir));
+    console.log('       包含: ' + res.files.join(' / '));
   }
   if (g.filledNumeric.length > 0) {
     console.log('     从文本提取: ' + g.filledNumeric.join(', '));
