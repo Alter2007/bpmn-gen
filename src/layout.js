@@ -92,9 +92,17 @@ function computeLayout(ir) {
 
   // 分层用的邻接表：剔除回边（渲染时仍走 computeWaypoints 的回边分支）
   const back = findBackEdges(nodes, succs);
+  // 模板里的节点是按流程顺序写的，所以"目标在源之前"就是回边。
+  // 光靠 DFS 的"指回栈上"会漏判：目标节点已经出栈时（如 上级审批→提交 的驳回）识别不出来。
+  const orderIndex = new Map();
+  allNodes.forEach((n, i) => orderIndex.set(n.id, i));
+  const isBackEdge = (f) =>
+    back.has(f.from + '>' + f.to) ||
+    (orderIndex.has(f.from) && orderIndex.has(f.to) && orderIndex.get(f.to) <= orderIndex.get(f.from));
+
   const dagSuccs = new Map();
   for (const [from, list] of succs) {
-    dagSuccs.set(from, list.filter((to) => !back.has(from + '>' + to)));
+    dagSuccs.set(from, list.filter((to) => !isBackEdge({ from: from, to: to })));
   }
 
   const starts = nodes.filter((n) => n.type === 'startEvent');
@@ -125,10 +133,54 @@ function computeLayout(ir) {
     }
   }
 
+  // 边界事件不占层：跟它的宿主任务同层（它是压在任务边框上的小圆）
+  for (const n of (ir.nodes || [])) {
+    if (n.type !== 'boundaryEvent' || !n.attachedTo) continue;
+    const ownerDepth = depth.get(n.attachedTo);
+    if (ownerDepth !== undefined) depth.set(n.id, ownerDepth);
+  }
+
+  // 兜底：没被 BFS 走到的节点（典型是"边界事件的下游"，边界事件本身不是流程步骤）
+  // 取"前驱最大深度 + 1"，而不是直接给最大值+1——后者会在中间空出一层。
+  for (let pass = 0; pass < 6; pass++) {
+    let progressed = false;
+    for (const n of nodes) {
+      if (depth.has(n.id)) continue;
+      let best = -1;
+      for (const predId of (preds.get(n.id) || [])) {
+        const d = depth.get(predId);
+        if (d !== undefined && d > best) best = d;
+      }
+      if (best >= 0) {
+        depth.set(n.id, best + 1);
+        progressed = true;
+      }
+    }
+    if (!progressed) break;
+  }
   let maxDepth = 0;
   for (const v of depth.values()) maxDepth = Math.max(maxDepth, v);
   for (const n of nodes) {
     if (!depth.has(n.id)) depth.set(n.id, maxDepth + 1);
+  }
+
+  // 固定点松弛：上面兜底/边界事件补的层可能让后继需要更深的层，
+  // 否则会出现"结束事件排在有前驱的节点左边"这种错位（End 深度算成 3、前驱却是 4）。
+  let changed = true;
+  let iter = 0;
+  while (changed && iter++ < 200) {
+    changed = false;
+    for (const f of flows) {
+      if (isBackEdge(f)) continue;
+      const fd = depth.get(f.from);
+      if (fd === undefined) continue;
+      const want = fd + 1;
+      if (want > nodes.length + 2) continue;   // 安全阀：DAG 最长路径不会超过节点数
+      if ((depth.get(f.to) || 0) < want) {
+        depth.set(f.to, want);
+        changed = true;
+      }
+    }
   }
 
   // 分层

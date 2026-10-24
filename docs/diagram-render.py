@@ -40,7 +40,7 @@ def unesc(s):
 def read_elements(xml):
     out = {}
     for m in re.finditer(
-        r"<bpmn:(userTask|serviceTask|startEvent|endEvent|exclusiveGateway|parallelGateway|inclusiveGateway)\b([^>]*)>",
+        r"<bpmn:(userTask|serviceTask|startEvent|endEvent|exclusiveGateway|parallelGateway|inclusiveGateway|boundaryEvent)\b([^>]*)>",
         xml,
     ):
         typ, attrs = m.group(1), m.group(2)
@@ -181,7 +181,16 @@ def render(xml, out_png, scale=2.0):
         typ = el.get("type", "")
         name = el.get("name", "")
 
-        if typ in ("startEvent", "endEvent"):
+        if typ == "boundaryEvent":
+            r = w / 2
+            d.ellipse([cx - r, cy - r, cx + r, cy + r], fill=WHITE, outline=INK, width=max(2, int(2 * scale)))
+            r2 = r * 0.62
+            d.ellipse([cx - r2, cy - r2, cx + r2, cy + r2], outline=INK, width=max(1, int(1.4 * scale)))
+            if name:
+                fnt = f(int(10 * scale))
+                tw = d.textlength(name, font=fnt)
+                d.text((cx - tw / 2, y + h + 2 * scale), name, font=fnt, fill=GRAY)
+        elif typ in ("startEvent", "endEvent"):
             r = w / 2
             d.ellipse([cx - r, cy - r, cx + r, cy + r], fill=WHITE, outline=INK,
                       width=max(2, int((3.5 if typ == "endEvent" else 2) * scale)))

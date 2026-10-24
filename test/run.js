@@ -582,6 +582,8 @@ function runLayoutUnit() {
   let checkedTemplates = 0;
   const crossProblems = [];
   const backEntries = [];
+  const endProblems = [];
+  const boundaryProblems = [];
 
   for (const tpl of tpls) {
     let built;
@@ -595,6 +597,27 @@ function runLayoutUnit() {
 
     const rects = [];
     for (const [id, p] of pos) rects.push({ id: id, x: p.x + 2, y: p.y + 2, w: p.w - 4, h: p.h - 4 });
+
+    // 分层不变量：结束事件必须在所有前驱之后；边界事件与宿主同层
+    for (const n of ir.nodes) {
+      if (n.type === 'endEvent') {
+        const d = layout.depth.get(n.id);
+        for (const f of ir.flows) {
+          if (f.to !== n.id) continue;
+          const pd = layout.depth.get(f.from);
+          if (pd !== undefined && pd >= d) {
+            endProblems.push(tpl.templateId + '/' + n.id + ' 深度 ' + d + ' 但前驱 ' + f.from + ' 深度 ' + pd);
+          }
+        }
+      }
+      if (n.type === 'boundaryEvent' && n.attachedTo) {
+        const bd = layout.depth.get(n.id);
+        const od = layout.depth.get(n.attachedTo);
+        if (bd !== undefined && od !== undefined && bd !== od) {
+          boundaryProblems.push(tpl.templateId + '/' + n.id + ' 深度 ' + bd + ' 宿主深度 ' + od);
+        }
+      }
+    }
 
     let backSeq = 0;
     for (const f of ir.flows) {
@@ -625,6 +648,11 @@ function runLayoutUnit() {
 
   check('覆盖全部模板的布局检查', checkedTemplates === tpls.length,
     '检查了 ' + checkedTemplates + ' / ' + tpls.length);
+
+  // 结束事件必须排在前驱之后（之前 End 被算成 3、前驱却是 4，圆就压在流程中间了）
+  check('结束事件都在最后一层', endProblems.length === 0, endProblems.slice(0, 5).join(' | '));
+  // 边界事件是压在任务边框上的小圆，必须和宿主同层
+  check('边界事件与宿主任务同层', boundaryProblems.length === 0, boundaryProblems.slice(0, 5).join(' | '));
   check('连线不穿过任何节点框', crossProblems.length === 0,
     crossProblems.slice(0, 5).join(' | '));
   check('回边都从目标下边进入', backEntries.length === 0,

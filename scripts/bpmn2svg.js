@@ -44,7 +44,7 @@ function esc(s) {
 /** 从 process 段取元素类型与名字：<bpmn:userTask id="x" name="y"> */
 function readElements(xml) {
   const map = new Map();
-  const re = /<bpmn:(userTask|serviceTask|startEvent|endEvent|exclusiveGateway|parallelGateway|inclusiveGateway)\b([^>]*)>/g;
+  const re = /<bpmn:(userTask|serviceTask|startEvent|endEvent|exclusiveGateway|parallelGateway|inclusiveGateway|boundaryEvent)\b([^>]*)>/g;
   let m;
   while ((m = re.exec(xml)) !== null) {
     const type = m[1];
@@ -190,7 +190,14 @@ function render(xml, opts) {
   for (const [id, s] of shapes) {
     const el = elements.get(id) || {};
     const cx = s.x + s.w / 2, cy = s.y + s.h / 2;
-    if (el.type === 'startEvent' || el.type === 'endEvent') {
+    if (el.type === 'boundaryEvent') {
+      var br = s.w / 2;
+      parts.push('<circle cx="' + cx + '" cy="' + cy + '" r="' + br + '" fill="#ffffff" stroke="' + PALETTE.eventStroke + '" stroke-width="2"/>');
+      parts.push('<circle cx="' + cx + '" cy="' + cy + '" r="' + (br * 0.62).toFixed(1) + '" fill="none" stroke="' + PALETTE.eventStroke + '" stroke-width="1.4"/>');
+      if (el.name) {
+        parts.push('<text x="' + cx + '" y="' + (s.y + s.h + 12) + '" font-size="10" fill="' + PALETTE.gatewayText + '" text-anchor="middle">' + esc(el.name) + '</text>');
+      }
+    } else if (el.type === 'startEvent' || el.type === 'endEvent') {
       parts.push('<circle cx="' + cx + '" cy="' + cy + '" r="' + (s.w / 2) +
         '" fill="#ffffff" stroke="' + PALETTE.eventStroke + '" stroke-width="' + (el.type === 'endEvent' ? 3.5 : 2) + '"/>');
       if (el.name) {
