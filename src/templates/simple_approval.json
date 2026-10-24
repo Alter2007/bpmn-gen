@@ -1,7 +1,7 @@
 {
   "templateId": "simple_approval",
   "name": "单级审批",
-  "description": "提交后由一名审批人处理即可完成，适合最简单的场景",
+  "description": "提交后由一名审批人处理即可完成，适合最简单的场景；是否需要上级复核时需上级复核",
   "keywords": [
     "单级",
     "简单",

@@ -1,7 +1,7 @@
 {
   "templateId": "business_trip",
   "name": "出差申请",
-  "description": "出差申报：主管审批后由行政备案行程",
+  "description": "出差申报：主管审批后由行政备案行程；是否出境时需行政审核",
   "keywords": [
     "出差",
     "行程",

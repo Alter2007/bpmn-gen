@@ -1,7 +1,7 @@
 {
   "templateId": "complaint_handling",
   "name": "投诉处理",
-  "description": "政务信访/投诉：登记分办后由责任部门处理并回访",
+  "description": "政务信访/投诉：登记分办后由责任部门处理并回访；是否重大投诉时需主要领导审批",
   "keywords": [
     "投诉",
     "信访",

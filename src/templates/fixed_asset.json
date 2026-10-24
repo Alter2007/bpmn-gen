@@ -1,7 +1,7 @@
 {
   "templateId": "fixed_asset",
   "name": "固定资产领用",
-  "description": "资产申领与报废：部门审批后由行政登记",
+  "description": "资产申领与报废：部门审批后由行政登记；是否需要处置资产时需资产管理员复核",
   "keywords": [
     "固定资产",
     "领用",

@@ -1,7 +1,7 @@
 {
   "templateId": "vehicle_use",
   "name": "用车申请",
-  "description": "公务用车：主管审批后由车队派车",
+  "description": "公务用车：主管审批后由车队派车；是否出市时需行政经理审批",
   "keywords": [
     "用车",
     "派车",

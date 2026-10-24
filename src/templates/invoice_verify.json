@@ -1,7 +1,7 @@
 {
   "templateId": "invoice_verify",
   "name": "发票查验",
-  "description": "报销凭证查验：财务查验票面后登记入账",
+  "description": "报销凭证查验：财务查验票面后登记入账；是否查验异常时需税务专员复核",
   "keywords": [
     "发票",
     "查验",

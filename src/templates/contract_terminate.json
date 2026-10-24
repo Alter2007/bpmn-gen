@@ -1,7 +1,7 @@
 {
   "templateId": "contract_terminate",
   "name": "合同终止",
-  "description": "合同解除：法务审核后由财务确认结算",
+  "description": "合同解除：法务审核后由财务确认结算；是否协商一致时需法务审核",
   "keywords": [
     "合同终止",
     "解约",

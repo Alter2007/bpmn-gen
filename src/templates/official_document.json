@@ -1,7 +1,7 @@
 {
   "templateId": "official_document",
   "name": "公文签发",
-  "description": "政务发文：拟稿、核稿、会签、签发四步走",
+  "description": "政务发文：拟稿、核稿、会签、签发四步走；是否急件时需主要领导签发",
   "keywords": [
     "公文",
     "发文",

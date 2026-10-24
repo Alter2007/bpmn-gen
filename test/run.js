@@ -451,6 +451,53 @@ function runNumericUnit() {
   const handled = !x.g.ok || (x.g.warnings || []).length > 0 || x.conds.length === 0;
   check('没有阈值时不静默（有提示或本就不需要阈值）', handled, JSON.stringify(x.g.warnings || []));
 }
+// ---------------- 帮助页与前端资源自检 ----------------
+// 帮助页是纯静态 HTML，很容易在改别的功能时被改坏，这里锁住几条不变量。
+function runHelpPageUnit() {
+  console.log('');
+  console.log('== 帮助页与前端资源 ==');
+
+  const htmlPath = path.join(__dirname, '..', 'web', 'index.html');
+  const jsPath = path.join(__dirname, '..', 'web', 'app.js');
+  if (!fs.existsSync(htmlPath)) {
+    check('web/index.html 存在', false, htmlPath);
+    return;
+  }
+  const html = fs.readFileSync(htmlPath, 'utf8');
+  const app = fs.readFileSync(jsPath, 'utf8');
+
+  const articles = html.match(/<article class="help-page[^>]*>/g) || [];
+  check('帮助页文章数 >= 10', articles.length >= 10, '实际 ' + articles.length);
+
+  const titles = [];
+  const re = /<article class="help-page[^>]*data-title="([^"]*)"/g;
+  let m;
+  while ((m = re.exec(html)) !== null) titles.push(m[1]);
+  check('每页都有标题', titles.length === articles.length, titles.length + ' / ' + articles.length);
+  check('标题非空', titles.every((t) => t.trim() !== ''), JSON.stringify(titles));
+  check('标题不重复', new Set(titles).size === titles.length, titles.join(','));
+
+  // 目录与翻页元素
+  for (const id of ['help-toc-list', 'help-pages', 'help-prev', 'help-next', 'help-num', 'gen-warn']) {
+    check('页面含 #' + id, html.indexOf('id="' + id + '"') !== -1);
+  }
+
+  // "填入这句试试"按钮必须带内容
+  const tryBtns = html.match(/data-try="[^"]*"/g) || [];
+  const emptyTry = html.match(/data-try="\s*"/g) || [];
+  check('示例按钮都带示例文本', tryBtns.length > 0 && emptyTry.length === 0,
+    tryBtns.length + ' 个，空 ' + emptyTry.length);
+
+  // 静态页码要和真实页数一致（没有 JS 时也不该显示错的）
+  const numMatch = html.match(/id="help-num"[^>]*>\s*1\s*\/\s*(\d+)\s*</);
+  check('静态页码与页数一致', !!numMatch && Number(numMatch[1]) === articles.length,
+    numMatch ? ('页面写 1/' + numMatch[1] + '，实际 ' + articles.length + ' 页') : '未找到页码');
+
+  // app.js 里的帮助逻辑
+  check('app.js 有目录构建逻辑', app.indexOf('buildHelpToc') !== -1);
+  check('app.js 有页码翻页逻辑', app.indexOf('helpShow') !== -1);
+  check('app.js 有生成提示渲染', app.indexOf('renderGenWarnings') !== -1);
+}
 function main() {
   console.log('BPMN 生成器测试套件');
   console.log('='.repeat(52));
@@ -463,6 +510,7 @@ function main() {
   runNumericUnit();
   runPromptUnit();
   runArtifactsUnit();
+  runHelpPageUnit();
   runScriptHygiene();
 
   console.log('');

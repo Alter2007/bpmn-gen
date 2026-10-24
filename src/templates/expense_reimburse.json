@@ -1,7 +1,7 @@
 {
   "templateId": "expense_reimburse",
   "name": "费用报销串行审批",
-  "description": "提交后依次经过部门审核与财务审核，适合标准报销场景",
+  "description": "提交后依次经过部门审核与财务审核，适合标准报销场景；是否含招待费时需财务复核",
   "keywords": [
     "报销",
     "费用",

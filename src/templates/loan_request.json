@@ -1,7 +1,7 @@
 {
   "templateId": "loan_request",
   "name": "借款申请",
-  "description": "备用金借款：主管审批后由财务放款",
+  "description": "备用金借款：主管审批后由财务放款；是否超期未还时需财务总监审批",
   "keywords": [
     "借款",
     "备用金",

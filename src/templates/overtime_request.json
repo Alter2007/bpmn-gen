@@ -1,7 +1,7 @@
 {
   "templateId": "overtime_request",
   "name": "加班申请",
-  "description": "加班申请：直属主管审批后由 HR 备案",
+  "description": "加班申请：直属主管审批后由 HR 备案；是否节假日加班时需HR 复核",
   "keywords": [
     "加班",
     "加点",

@@ -1,7 +1,7 @@
 {
   "templateId": "supplier_onboard",
   "name": "供应商准入",
-  "description": "新供应商入库：资质审核、采购审批、财务备案",
+  "description": "新供应商入库：资质审核、采购审批、财务备案；是否境外供应商时需合规审核",
   "keywords": [
     "供应商",
     "准入",

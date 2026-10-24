@@ -1,7 +1,7 @@
 {
   "templateId": "special_approval",
   "name": "特殊事项审批",
-  "description": "特事特批：逐级上报至分管领导与主要领导",
+  "description": "特事特批：逐级上报至分管领导与主要领导；是否需要上报时需上报审核",
   "keywords": [
     "特殊事项",
     "特批",

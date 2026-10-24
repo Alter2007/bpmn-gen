@@ -1,7 +1,7 @@
 {
   "templateId": "training_apply",
   "name": "培训申请",
-  "description": "外部培训：主管审批后由 HR 审批预算",
+  "description": "外部培训：主管审批后由 HR 审批预算；是否外部培训时需HR 总监审批",
   "keywords": [
     "培训",
     "课程",

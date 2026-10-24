@@ -1,7 +1,7 @@
 {
   "templateId": "seal_apply",
   "name": "用章申请",
-  "description": "申请用章 → 审批 → 用印登记",
+  "description": "申请用章 → 审批 → 用印登记；是否外带用印时多走一道「法务审核」",
   "keywords": [
     "用章",
     "盖章",

@@ -1,7 +1,7 @@
 {
   "templateId": "budget_adjust",
   "name": "预算调整",
-  "description": "预算变更：财务审核后再由分管领导审批",
+  "description": "预算变更：财务审核后再由分管领导审批；是否跨年度调整时需财务总监审批",
   "keywords": [
     "预算调整",
     "调预算",

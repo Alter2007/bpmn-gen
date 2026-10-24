@@ -1,7 +1,7 @@
 {
   "templateId": "it_access",
   "name": "IT 权限申请",
-  "description": "系统权限：主管审批后由 IT 开通账号",
+  "description": "系统权限：主管审批后由 IT 开通账号；是否生产环境时多走一道「运维总监审批」",
   "keywords": [
     "权限",
     "账号",

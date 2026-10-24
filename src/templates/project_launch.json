@@ -1,7 +1,7 @@
 {
   "templateId": "project_launch",
   "name": "项目立项审批",
-  "description": "新项目立项：部门经理初审，总经理批准",
+  "description": "新项目立项：部门经理初审，总经理批准；是否重点项目时需总经理审批",
   "keywords": [
     "立项",
     "项目",

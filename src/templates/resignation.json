@@ -1,7 +1,7 @@
 {
   "templateId": "resignation",
   "name": "离职审批",
-  "description": "员工离职：主管审批、HR 审批、工作交接确认",
+  "description": "员工离职：主管审批、HR 审批、工作交接确认；是否涉密岗位时多走一道「安全审查」",
   "keywords": [
     "离职",
     "辞职",
