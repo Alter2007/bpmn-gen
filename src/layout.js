@@ -8,6 +8,7 @@
 const SIZES = {
   startEvent: [36, 36],
   endEvent: [36, 36],
+  boundaryEvent: [36, 36],
   userTask: [100, 80],
   serviceTask: [100, 80],
   scriptTask: [100, 80],
@@ -72,7 +73,10 @@ function findBackEdges(nodes, succs) {
  * @returns {{pos: Map<string, object>, depth: Map<string, number>, layers: Map<number, string[]>}}
  */
 function computeLayout(ir) {
-  const nodes = ir.nodes || [];
+  const allNodes = ir.nodes || [];
+  // 边界事件不参与分层：它是压在任务边框上的小圆，位置由挂载对象决定
+  const nodes = allNodes.filter((n) => n.type !== 'boundaryEvent');
+  const boundaryNodes = allNodes.filter((n) => n.type === 'boundaryEvent');
   const flows = ir.flows || [];
 
   const succs = new Map();
@@ -168,6 +172,24 @@ function computeLayout(ir) {
         cy: y + h / 2,
         depth: d
       });
+    });
+  }
+
+  // 边界事件贴在被挂载任务的右下角（BPMN 惯例：圆压在边框上）
+  for (const b of boundaryNodes) {
+    const owner = pos.get(b.attachedTo);
+    if (!owner) continue;
+    const { w, h } = sizeOf('boundaryEvent');
+    const bx = Math.round(owner.x + owner.w * 0.72 - w / 2);
+    const by = Math.round(owner.y + owner.h - h / 2);
+    pos.set(b.id, {
+      x: bx,
+      y: by,
+      w,
+      h,
+      cx: bx + w / 2,
+      cy: by + h / 2,
+      depth: owner.depth
     });
   }
 

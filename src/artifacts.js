@@ -111,7 +111,8 @@ function buildDoc(ir) {
     serviceTask: '服务任务',
     exclusiveGateway: '排他网关',
     parallelGateway: '并行网关',
-    inclusiveGateway: '包容网关'
+    inclusiveGateway: '包容网关',
+    boundaryEvent: '边界事件（定时器）'
   };
 
   const lines = [];

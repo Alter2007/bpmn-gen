@@ -62,7 +62,8 @@ java -Dfile.encoding=UTF-8 -Dstdout.encoding=UTF-8 -cp "%RUNJARS%\*" "tools\flow
   "%OUTDIR%\travel-reject.bpmn|amount=6000,approved=false|expectprefix=Task_Submit>Task_Finance>Task_Submit" ^
   "%OUTDIR%\mi-all.bpmn|approvers=u1+u2+u3|expect=Task_Submit>Task_Sign>Task_Sign>Task_Sign" ^
   "%OUTDIR%\mi-all.bpmn|approvers=u1+u2|expect=Task_Submit>Task_Sign>Task_Sign" ^
-  "%OUTDIR%\mi-any.bpmn|approvers=u1+u2+u3|expect=Task_Submit>Task_Sign"
+  "%OUTDIR%\mi-any.bpmn|approvers=u1+u2+u3|expect=Task_Submit>Task_Sign" ^
+  "%OUTDIR%\timeout-escalation.bpmn|expecttimer=1|expect=Task_Submit>Task_Approve"
 if errorlevel 1 goto fail
 
 echo.

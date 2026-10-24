@@ -1,5 +1,6 @@
 import org.flowable.engine.ProcessEngine;
 import org.flowable.engine.ProcessEngineConfiguration;
+import org.flowable.engine.ManagementService;
 import org.flowable.engine.RepositoryService;
 import org.flowable.engine.RuntimeService;
 import org.flowable.engine.TaskService;
@@ -93,6 +94,7 @@ public class FlowableRun {
         RepositoryService repositoryService = engine.getRepositoryService();
         RuntimeService runtimeService = engine.getRuntimeService();
         TaskService taskService = engine.getTaskService();
+        ManagementService managementService = engine.getManagementService();
 
         int ok = 0;
         int total = 0;
@@ -103,7 +105,7 @@ public class FlowableRun {
                 total++;
                 String[] parts = spec.split("\\|");
                 String filePath = parts[0];
-                Map<String, Object> vars = parseVars(parts.length > 1 ? parts[1] : "");
+                Map<String, Object> vars = parseVars((parts.length > 1 && !parts[1].startsWith("expect")) ? parts[1] : "");
 
                 File f = new File(filePath);
                 if (!f.exists()) {
@@ -163,6 +165,13 @@ public class FlowableRun {
                     continue;
                 }
 
+                // 定时器断言：边界定时器是在"挂载的任务被激活"时才注册的，
+                // 所以不能只在启动后查一次——全程跟踪出现过的最大定时器作业数。
+                // 这也是"超时催办真的生效"的证据（光通过 XSD/解析不代表定时器被注册）。
+                String expectTimer = timerOf(parts);
+                String timerWhy = "";
+                long maxTimerJobs = 0;
+
                 // 前缀断言：驳回/退回会形成环，流程不会"结束"，
                 // 只要路径前 k 段符合预期就停下并判定通过。
                 String expectPrefix = prefixOf(parts);
@@ -183,6 +192,11 @@ public class FlowableRun {
                         Task t = tasks.get(0);
                         path.add(stripTaskPrefix(t.getTaskDefinitionKey()) + "「" + safe(t.getName()) + "」");
                         taskService.complete(t.getId());
+                        try {
+                            long cnt = managementService.createTimerJobQuery()
+                                .processInstanceId(pi.getId()).count();
+                            if (cnt > maxTimerJobs) maxTimerJobs = cnt;
+                        } catch (Exception ignore) { /* 老引擎没有定时器查询时忽略 */ }
                         String keys = joinKeys(path);
                         if (expectPrefix != null && keys.startsWith(expectPrefix)) {
                             prefixDone = true;
@@ -240,6 +254,17 @@ public class FlowableRun {
                 }
 
                 // 前缀断言不要求流程结束（驳回环本来就不会结束）
+                if (expectTimer != null) {
+                    try {
+                        long want = Long.parseLong(expectTimer.trim());
+                        if (maxTimerJobs != want) {
+                            timerWhy = "期望出现过 " + want + " 个定时器作业，实际最多 " + maxTimerJobs;
+                        }
+                    } catch (Exception e) {
+                        timerWhy = "定时器断言解析失败: " + e.getMessage();
+                    }
+                }
+                if (!timerWhy.isEmpty()) { assertOk = false; why = (why.isEmpty() ? timerWhy : why + ' ' + timerWhy); }
                 boolean settled = prefixDone || containsDone || ended;
                 if (settled && !path.isEmpty() && assertOk) {
                     ok++;
@@ -323,7 +348,7 @@ public class FlowableRun {
 
     /** spec 形如 file|vars|expect=A>B；取出 expect 值 */
     private static String expectOf(String[] parts) {
-        for (int i = 2; i < parts.length; i++) {
+        for (int i = 1; i < parts.length; i++) {
             if (parts[i].startsWith("expect=")) return parts[i].substring("expect=".length());
         }
         return null;
@@ -331,15 +356,22 @@ public class FlowableRun {
 
     /** spec 形如 file|vars|expectcontains=k1,k2 */
     private static String containsOf(String[] parts) {
-        for (int i = 2; i < parts.length; i++) {
+        for (int i = 1; i < parts.length; i++) {
             if (parts[i].startsWith("expectcontains=")) return parts[i].substring("expectcontains=".length());
         }
         return null;
     }
 
     /** spec 形如 file|vars|expectprefix=A>B —— 只要求路径以此开头（驳回环场景） */
+    /** spec 形如 file|vars|expecttimer=1 —— 断言实例启动后注册了几个定时器作业 */
+    private static String timerOf(String[] parts) {
+        for (int i = 1; i < parts.length; i++) {
+            if (parts[i].startsWith("expecttimer=")) return parts[i].substring("expecttimer=".length());
+        }
+        return null;
+    }
     private static String prefixOf(String[] parts) {
-        for (int i = 2; i < parts.length; i++) {
+        for (int i = 1; i < parts.length; i++) {
             if (parts[i].startsWith("expectprefix=")) return parts[i].substring("expectprefix=".length());
         }
         return null;

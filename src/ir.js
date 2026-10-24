@@ -13,7 +13,9 @@ const NODE_TYPES = new Set([
   'scriptTask',
   'exclusiveGateway',
   'parallelGateway',
-  'inclusiveGateway'
+  'inclusiveGateway',
+  // 边界事件：挂在任务边框上，用于「超时催办 / 超时升级」
+  'boundaryEvent'
 ]);
 
 const GATEWAY_TYPES = new Set(['exclusiveGateway', 'parallelGateway', 'inclusiveGateway']);
@@ -53,6 +55,7 @@ function validateIR(ir) {
 
   // ---- 节点 ----
   const nodeIds = new Set();
+  const boundaryIds = new Set();
   nodes.forEach((n, i) => {
     const at = `nodes[${i}]`;
     if (!n || typeof n !== 'object') {
@@ -65,6 +68,7 @@ function validateIR(ir) {
       errors.push(`节点 id 重复: ${n.id}`);
     } else {
       nodeIds.add(n.id);
+      if (n.type === 'boundaryEvent') boundaryIds.add(n.id);
     }
     if (!NODE_TYPES.has(n.type)) {
       errors.push(`${at}(${n.id || '?'}) 节点类型不支持: ${n.type}`);
@@ -98,7 +102,41 @@ function validateIR(ir) {
         }
       }
     }
+
+    // 边界事件（超时催办）：必须挂在任务上，且必须有定时器
+    if (n.type === 'boundaryEvent') {
+      if (!n.attachedTo || typeof n.attachedTo !== 'string') {
+        errors.push(`${at}(${n.id || '?'}) 边界事件必须用 attachedTo 指定挂载的任务 id`);
+      }
+      if (!n.timer || typeof n.timer !== 'object') {
+        errors.push(`${at}(${n.id || '?'}) 边界事件必须有 timer（如 {"type":"duration","value":"P3D"}）`);
+      } else {
+        const tv = n.timer.value;
+        if (!tv || typeof tv !== 'string') {
+          errors.push(`${at}(${n.id || '?'}) timer.value 必填，ISO-8601 时长如 P3D / PT8H`);
+        } else if (!/^P(T)?[\dA-Z.]+$/i.test(tv)) {
+          warnings.push(`${at}(${n.id || '?'}) timer.value "${tv}" 不像 ISO-8601 时长（P3D / PT8H / P1DT12H）`);
+        }
+        if (n.timer.type && n.timer.type !== 'duration' && n.timer.type !== 'cycle' && n.timer.type !== 'date') {
+          errors.push(`${at}(${n.id || '?'}) timer.type 只能是 duration / cycle / date`);
+        }
+      }
+      if (!n.name) warnings.push(`边界事件 ${n.id || at} 建议给 name（例如"超时"），便于业务方阅读`);
+    }
   });
+
+  // 边界事件的挂载目标必须在节点表里，而且必须是任务
+  for (const n of nodes) {
+    if (!n || n.type !== 'boundaryEvent' || !n.attachedTo) continue;
+    if (!nodeIds.has(n.attachedTo)) {
+      errors.push(`边界事件 ${n.id} 的 attachedTo 指向不存在的节点: ${n.attachedTo}`);
+    } else {
+      const owner = nodes.filter((x) => x && x.id === n.attachedTo)[0];
+      if (owner && owner.type !== 'userTask' && owner.type !== 'serviceTask') {
+        errors.push(`边界事件 ${n.id} 只能挂在任务上，不能挂在 ${owner.type}`);
+      }
+    }
+  }
 
   // ---- 连线 ----
   const flowIds = new Set();
@@ -122,6 +160,10 @@ function validateIR(ir) {
     }
     if (!nodeIds.has(f.to)) {
       errors.push(`${at}(${f.id || '?'}) 终点不存在: ${f.to}`);
+    }
+    // 边界事件靠"挂载到任务"触发，不允许有入向连线
+    if (boundaryIds.has(f.to)) {
+      errors.push(`${at}(${f.id || '?'}) 边界事件 ${f.to} 不能有入向连线（它由挂载关系触发）`);
     }
     if (f.from && f.to && f.from === f.to) {
       errors.push(`${at}(${f.id || '?'}) 不允许自环`);

@@ -60,6 +60,15 @@ function analyze(ir) {
     if (succIds.has(f.from)) succIds.get(f.from).push(f.to);
     if (predIds.has(f.to)) predIds.get(f.to).push(f.from);
   }
+  // 边界事件没有入向连线，它由"挂载到任务"触发。
+  // 可达性上把它当成挂载任务的直接后继，否则它和它下游的节点都会被误判为不可达。
+  for (const n of nodes) {
+    if (n.type !== 'boundaryEvent' || !n.attachedTo) continue;
+    if (succIds.has(n.attachedTo) && succIds.has(n.id)) {
+      succIds.get(n.attachedTo).push(n.id);
+      predIds.get(n.id).push(n.attachedTo);
+    }
+  }
 
   // ---- 起止事件 ----
   const starts = nodes.filter((n) => n.type === 'startEvent');
@@ -87,7 +96,7 @@ function analyze(ir) {
     if (n.type !== 'endEvent' && outs.length === 0) {
       errors.push(`节点 ${label} 没有出向连线（悬挂节点）`);
     }
-    if (n.type !== 'startEvent' && ins.length === 0) {
+    if (n.type !== 'startEvent' && n.type !== 'boundaryEvent' && ins.length === 0) {
       errors.push(`节点 ${label} 没有入向连线（不可达）`);
     }
 

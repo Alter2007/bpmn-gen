@@ -75,8 +75,10 @@ function runPositive(file) {
   // CDATA 的合法来源有两处：连线条件 与 多实例的 completionCondition
   const condCount = r.ir.flows.filter((f) => f.condition).length;
   const miCondCount = r.ir.nodes.filter((n) => n.multiInstance && n.multiInstance.completionCondition).length;
-  check(name + ' / 条件表达式 CDATA', countOccurrences(xml, '<![CDATA[') === condCount + miCondCount,
-    '期望 ' + (condCount + miCondCount) + ' 实际 ' + countOccurrences(xml, '<![CDATA['));
+  const timerCount = r.ir.nodes.filter((n) => n.type === 'boundaryEvent' && n.timer).length;
+  const expectCdata = condCount + miCondCount + timerCount;
+  check(name + ' / 条件表达式 CDATA', countOccurrences(xml, '<![CDATA[') === expectCdata,
+    '期望 ' + expectCdata + ' 实际 ' + countOccurrences(xml, '<![CDATA['));
 
   for (const n of r.ir.nodes) {
     if (n.type !== 'exclusiveGateway') continue;

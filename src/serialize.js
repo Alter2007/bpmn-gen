@@ -126,13 +126,32 @@ function serialize(ir, opts) {
       attrs.push('default="' + escAttr(idMap.get(defaultFlowBySource.get(n.id))) + '"');
     }
 
+    // 边界事件（超时催办）：attachedToRef 指向它挂载的任务；
+    // cancelActivity=true 表示超时后原任务被取消（催办升级的标准语义）
+    if (n.type === 'boundaryEvent') {
+      attrs.push('attachedToRef="' + escAttr(idMap.get(n.attachedTo) || n.attachedTo) + '"');
+      attrs.push('cancelActivity="' + (n.cancelActivity === false ? 'false' : 'true') + '"');
+    }
+
     const tag = 'bpmn:' + n.type;
     const kids = [];
     for (const fid of incoming.get(n.id) || []) {
+      // 边界事件没有入向：它由挂载关系触发
+      if (n.type === 'boundaryEvent') continue;
       kids.push('      <bpmn:incoming>' + escText(idMap.get(fid)) + '</bpmn:incoming>');
     }
     for (const fid of outgoing.get(n.id) || []) {
       kids.push('      <bpmn:outgoing>' + escText(idMap.get(fid)) + '</bpmn:outgoing>');
+    }
+
+    // 定时器定义
+    if (n.type === 'boundaryEvent' && n.timer) {
+      const tv = String(n.timer.value || 'P1D');
+      const tType = n.timer.type || 'duration';
+      const tagName = tType === 'cycle' ? 'timeCycle' : (tType === 'date' ? 'timeDate' : 'timeDuration');
+      kids.push('      <bpmn:timerEventDefinition>');
+      kids.push('        <bpmn:' + tagName + ' xsi:type="bpmn:tFormalExpression"><![CDATA[' + tv + ']]></bpmn:' + tagName + '>');
+      kids.push('      </bpmn:timerEventDefinition>');
     }
 
     // 多实例（会签 / 或签）：
