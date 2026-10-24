@@ -174,15 +174,18 @@
               <tr><td>L1 良构</td><td>标签配对、根元素唯一、CDATA 完整</td><td>自研 xml-lint</td><td><span class="ok">通过</span></td></tr>
               <tr><td>L0 契约</td><td>字段类型、id 唯一、自环、默认流唯一</td><td>src/ir.js</td><td><span class="ok">通过</span></td></tr>
               <tr><td>L3 图论</td><td>起止唯一、悬挂节点、不可达、死路、网关默认流</td><td>src/graph.js</td><td><span class="ok">通过</span></td></tr>
-              <tr><td>L2 规范</td><td>是否符合 BPMN 2.0 官方 schema</td><td>OMG XSD + JDK 17</td><td><span class="ok">27 / 27</span></td></tr>
-              <tr><td>L2b 模型</td><td>模型能否被标准库建出来</td><td>第三方 bpmn-moddle</td><td><span class="ok">27 / 27</span></td></tr>
-              <tr><td>L4-lite</td><td>引擎能否解析并通过流程校验</td><td>Flowable 7.2.0</td><td><span class="ok">27 / 27</span></td></tr>
-              <tr><td>L4 实例</td><td>真实部署 + 启动实例 + 路径断言</td><td>Flowable + H2</td><td><span class="ok">6 / 6</span></td></tr>
+              <tr><td>L2 规范</td><td>是否符合 BPMN 2.0 官方 schema</td><td>OMG XSD + JDK 17</td><td><span class="ok">66 / 66</span></td></tr>
+              <tr><td>L2b 模型</td><td>模型能否被标准库建出来</td><td>第三方 bpmn-moddle</td><td><span class="ok">66 / 66</span></td></tr>
+              <tr><td>L4-lite</td><td>引擎能否解析并通过流程校验</td><td>Flowable 7.2.0</td><td><span class="ok">66 / 66</span></td></tr>
+              <tr><td>L4 实例</td><td>真实部署 + 启动实例 + 路径断言</td><td>Flowable + H2</td><td><span class="ok">13 / 13</span></td></tr>
+              <tr><td>分支覆盖</td><td>每个模板的每条分支都跑一遍</td><td>scripts/coverage-specs.js</td><td><span class="ok">100 / 100</span></td></tr>
+              <tr><td>对照实验</td><td>模板侧 12 条业务描述必须全过官方校验</td><td>scripts/compare-raw-xml.js</td><td><span class="ok">12 / 12</span></td></tr>
               <tr><td>端到端</td><td>大模型真实调用 8 条业务描述</td><td>run-llm-tests.cmd</td><td><span class="ok">8 / 8</span></td></tr>
             </tbody>
           </table>
         </div>
         <p class="note">L4-lite 证明「引擎接受这份流程定义」；L4 实例运行证明「流程真的能跑完并走对分支」——同一份文件、不同金额走不同审批人，路径断言已通过。</p>
+        <p class="note">表中的数字来自最近一次 <code>verify-all.cmd</code> 运行；每次 push 到 GitHub 时 CI 会自动重跑，以 Actions 页面结果为准。</p>
       </div>
     </section>
 

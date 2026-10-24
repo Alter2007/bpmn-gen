@@ -493,6 +493,12 @@ function runHelpPageUnit() {
   check('静态页码与页数一致', !!numMatch && Number(numMatch[1]) === articles.length,
     numMatch ? ('页面写 1/' + numMatch[1] + '，实际 ' + articles.length + ' 页') : '未找到页码');
 
+  // 验证报告页不能漏层（之前这页曾长期停在 27/27 的旧数字）
+  const verifySeg = (html.match(/<section class="view" id="view-verify">[\s\S]*?<\/section>/) || [''])[0];
+  for (const layer of ['L1', 'L0', 'L3', 'L2', 'L2b', 'L4-lite', 'L4', '分支覆盖', '端到端']) {
+    check('验证报告页含 ' + layer + ' 层', verifySeg.indexOf(layer) !== -1);
+  }
+  check('验证报告页未残留旧数字 27/27', verifySeg.indexOf('27 / 27') === -1, '仍是 27/27');
   // app.js 里的帮助逻辑
   check('app.js 有目录构建逻辑', app.indexOf('buildHelpToc') !== -1);
   check('app.js 有页码翻页逻辑', app.indexOf('helpShow') !== -1);
