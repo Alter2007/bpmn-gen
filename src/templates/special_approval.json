@@ -1,0 +1,91 @@
+{
+  "templateId": "special_approval",
+  "name": "特殊事项审批",
+  "description": "特事特批：逐级上报至分管领导与主要领导",
+  "keywords": [
+    "特殊事项",
+    "特批",
+    "越级",
+    "例外审批",
+    "特事特办"
+  ],
+  "slotOrder": [],
+  "slots": [],
+  "processId": "specialApproval",
+  "processName": "特殊事项审批",
+  "variables": [
+    {
+      "name": "reason",
+      "type": "string",
+      "description": "特殊事由"
+    }
+  ],
+  "nodes": [
+    {
+      "id": "StartEvent_1",
+      "type": "startEvent",
+      "name": "发起特殊事项审批"
+    },
+    {
+      "id": "Task_Submit",
+      "type": "userTask",
+      "name": "提交申请",
+      "assignee": "${initiator}"
+    },
+    {
+      "id": "Task_Director",
+      "type": "userTask",
+      "name": "分管领导审批",
+      "assignee": "${director}"
+    },
+    {
+      "id": "Task_Gm",
+      "type": "userTask",
+      "name": "主要领导批准",
+      "assignee": "${gm}"
+    },
+    {
+      "id": "EndEvent_1",
+      "type": "endEvent",
+      "name": "流程结束"
+    }
+  ],
+  "flows": [
+    {
+      "id": "Flow_1",
+      "from": "StartEvent_1",
+      "to": "Task_Submit"
+    },
+    {
+      "id": "Flow_2",
+      "from": "Task_Submit",
+      "to": "Task_Director"
+    },
+    {
+      "id": "Flow_A1",
+      "from": "Task_Director",
+      "to": "Task_Gm",
+      "default": true
+    },
+    {
+      "id": "Flow_End",
+      "from": "Task_Gm",
+      "to": "EndEvent_1",
+      "default": true
+    },
+    {
+      "id": "Flow_R1",
+      "from": "Task_Director",
+      "to": "Task_Submit",
+      "name": "驳回",
+      "condition": "${execution.getVariable('approved') == false}"
+    },
+    {
+      "id": "Flow_R2",
+      "from": "Task_Gm",
+      "to": "Task_Submit",
+      "name": "驳回",
+      "condition": "${execution.getVariable('approved') == false}"
+    }
+  ]
+}

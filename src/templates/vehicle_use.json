@@ -1,0 +1,90 @@
+{
+  "templateId": "vehicle_use",
+  "name": "用车申请",
+  "description": "公务用车：主管审批后由车队派车",
+  "keywords": [
+    "用车",
+    "派车",
+    "公务车",
+    "车辆申请"
+  ],
+  "slotOrder": [],
+  "slots": [],
+  "processId": "vehicleUse",
+  "processName": "用车申请",
+  "variables": [
+    {
+      "name": "duration",
+      "type": "number",
+      "description": "用车时长（小时）"
+    }
+  ],
+  "nodes": [
+    {
+      "id": "StartEvent_1",
+      "type": "startEvent",
+      "name": "发起用车申请"
+    },
+    {
+      "id": "Task_Submit",
+      "type": "userTask",
+      "name": "提交用车申请",
+      "assignee": "${initiator}"
+    },
+    {
+      "id": "Task_Leader",
+      "type": "userTask",
+      "name": "主管审批",
+      "assignee": "${manager}"
+    },
+    {
+      "id": "Task_Fleet",
+      "type": "userTask",
+      "name": "车队派车",
+      "assignee": "${fleet}"
+    },
+    {
+      "id": "EndEvent_1",
+      "type": "endEvent",
+      "name": "流程结束"
+    }
+  ],
+  "flows": [
+    {
+      "id": "Flow_1",
+      "from": "StartEvent_1",
+      "to": "Task_Submit"
+    },
+    {
+      "id": "Flow_2",
+      "from": "Task_Submit",
+      "to": "Task_Leader"
+    },
+    {
+      "id": "Flow_A1",
+      "from": "Task_Leader",
+      "to": "Task_Fleet",
+      "default": true
+    },
+    {
+      "id": "Flow_End",
+      "from": "Task_Fleet",
+      "to": "EndEvent_1",
+      "default": true
+    },
+    {
+      "id": "Flow_R1",
+      "from": "Task_Leader",
+      "to": "Task_Submit",
+      "name": "驳回",
+      "condition": "${execution.getVariable('approved') == false}"
+    },
+    {
+      "id": "Flow_R2",
+      "from": "Task_Fleet",
+      "to": "Task_Submit",
+      "name": "驳回",
+      "condition": "${execution.getVariable('approved') == false}"
+    }
+  ]
+}

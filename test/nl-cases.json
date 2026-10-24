@@ -149,5 +149,97 @@
       "主管审批",
       "HR 审批"
     ]
+  },
+  {
+    "name": "公文签发",
+    "text": "公文发文拟稿核稿签发",
+    "expectTemplate": "official_document",
+    "expectNames": [
+      "核稿",
+      "会签",
+      "签发"
+    ]
+  },
+  {
+    "name": "出差申请",
+    "text": "下周去上海出差三天",
+    "expectTemplate": "business_trip",
+    "expectNames": [
+      "直属主管审批",
+      "行政备案"
+    ]
+  },
+  {
+    "name": "借款申请",
+    "text": "申请借款备用金5000元",
+    "expectTemplate": "loan_request",
+    "expectNames": [
+      "主管审批",
+      "财务放款"
+    ]
+  },
+  {
+    "name": "固定资产领用",
+    "text": "领用一台固定资产设备",
+    "expectTemplate": "fixed_asset",
+    "expectNames": [
+      "部门审批",
+      "行政登记"
+    ]
+  },
+  {
+    "name": "用车申请",
+    "text": "明天用车去机场，需要派车",
+    "expectTemplate": "vehicle_use",
+    "expectNames": [
+      "主管审批",
+      "车队派车"
+    ]
+  },
+  {
+    "name": "合同终止",
+    "text": "合同终止，需要解约",
+    "expectTemplate": "contract_terminate",
+    "expectNames": [
+      "法务审核",
+      "财务结算确认"
+    ]
+  },
+  {
+    "name": "投诉处理",
+    "text": "群众来信投诉处理",
+    "expectTemplate": "complaint_handling",
+    "expectNames": [
+      "分办",
+      "责任部门处理",
+      "回访确认"
+    ]
+  },
+  {
+    "name": "特殊事项审批",
+    "text": "特殊事项特批，需要越级审批",
+    "expectTemplate": "special_approval",
+    "expectNames": [
+      "分管领导审批",
+      "主要领导批准"
+    ]
+  },
+  {
+    "name": "发票查验",
+    "text": "这张发票需要查验",
+    "expectTemplate": "invoice_verify",
+    "expectNames": [
+      "财务查验",
+      "登记入账"
+    ]
+  },
+  {
+    "name": "会议审批",
+    "text": "重要会议审批",
+    "expectTemplate": "meeting_apply",
+    "expectNames": [
+      "分管领导审批",
+      "主要领导审批"
+    ]
   }
 ]

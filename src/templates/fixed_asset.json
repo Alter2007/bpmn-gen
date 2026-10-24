@@ -1,0 +1,91 @@
+{
+  "templateId": "fixed_asset",
+  "name": "固定资产领用",
+  "description": "资产申领与报废：部门审批后由行政登记",
+  "keywords": [
+    "固定资产",
+    "领用",
+    "资产",
+    "报废",
+    "设备申领"
+  ],
+  "slotOrder": [],
+  "slots": [],
+  "processId": "fixedAsset",
+  "processName": "固定资产领用",
+  "variables": [
+    {
+      "name": "assetNo",
+      "type": "string",
+      "description": "资产编号"
+    }
+  ],
+  "nodes": [
+    {
+      "id": "StartEvent_1",
+      "type": "startEvent",
+      "name": "发起固定资产领用"
+    },
+    {
+      "id": "Task_Submit",
+      "type": "userTask",
+      "name": "提交资产申请",
+      "assignee": "${initiator}"
+    },
+    {
+      "id": "Task_Dept",
+      "type": "userTask",
+      "name": "部门审批",
+      "assignee": "${manager}"
+    },
+    {
+      "id": "Task_Admin",
+      "type": "userTask",
+      "name": "行政登记",
+      "assignee": "${admin}"
+    },
+    {
+      "id": "EndEvent_1",
+      "type": "endEvent",
+      "name": "流程结束"
+    }
+  ],
+  "flows": [
+    {
+      "id": "Flow_1",
+      "from": "StartEvent_1",
+      "to": "Task_Submit"
+    },
+    {
+      "id": "Flow_2",
+      "from": "Task_Submit",
+      "to": "Task_Dept"
+    },
+    {
+      "id": "Flow_A1",
+      "from": "Task_Dept",
+      "to": "Task_Admin",
+      "default": true
+    },
+    {
+      "id": "Flow_End",
+      "from": "Task_Admin",
+      "to": "EndEvent_1",
+      "default": true
+    },
+    {
+      "id": "Flow_R1",
+      "from": "Task_Dept",
+      "to": "Task_Submit",
+      "name": "驳回",
+      "condition": "${execution.getVariable('approved') == false}"
+    },
+    {
+      "id": "Flow_R2",
+      "from": "Task_Admin",
+      "to": "Task_Submit",
+      "name": "驳回",
+      "condition": "${execution.getVariable('approved') == false}"
+    }
+  ]
+}

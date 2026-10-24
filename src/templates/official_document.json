@@ -1,0 +1,111 @@
+{
+  "templateId": "official_document",
+  "name": "公文签发",
+  "description": "政务发文：拟稿、核稿、会签、签发四步走",
+  "keywords": [
+    "公文",
+    "发文",
+    "拟稿",
+    "核稿",
+    "签发",
+    "行文"
+  ],
+  "slotOrder": [],
+  "slots": [],
+  "processId": "officialDocument",
+  "processName": "公文签发",
+  "variables": [
+    {
+      "name": "docNo",
+      "type": "string",
+      "description": "文号"
+    }
+  ],
+  "nodes": [
+    {
+      "id": "StartEvent_1",
+      "type": "startEvent",
+      "name": "启动发文流程"
+    },
+    {
+      "id": "Task_Submit",
+      "type": "userTask",
+      "name": "拟稿",
+      "assignee": "${initiator}"
+    },
+    {
+      "id": "Task_Review",
+      "type": "userTask",
+      "name": "核稿",
+      "assignee": "${reviewer}"
+    },
+    {
+      "id": "Task_Cosign",
+      "type": "userTask",
+      "name": "会签",
+      "assignee": "${cosign}"
+    },
+    {
+      "id": "Task_Sign",
+      "type": "userTask",
+      "name": "签发",
+      "assignee": "${leader}"
+    },
+    {
+      "id": "EndEvent_1",
+      "type": "endEvent",
+      "name": "流程结束"
+    }
+  ],
+  "flows": [
+    {
+      "id": "Flow_1",
+      "from": "StartEvent_1",
+      "to": "Task_Submit"
+    },
+    {
+      "id": "Flow_2",
+      "from": "Task_Submit",
+      "to": "Task_Review"
+    },
+    {
+      "id": "Flow_A1",
+      "from": "Task_Review",
+      "to": "Task_Cosign",
+      "default": true
+    },
+    {
+      "id": "Flow_A2",
+      "from": "Task_Cosign",
+      "to": "Task_Sign",
+      "default": true
+    },
+    {
+      "id": "Flow_End",
+      "from": "Task_Sign",
+      "to": "EndEvent_1",
+      "default": true
+    },
+    {
+      "id": "Flow_R1",
+      "from": "Task_Review",
+      "to": "Task_Submit",
+      "name": "驳回",
+      "condition": "${execution.getVariable('approved') == false}"
+    },
+    {
+      "id": "Flow_R2",
+      "from": "Task_Cosign",
+      "to": "Task_Submit",
+      "name": "驳回",
+      "condition": "${execution.getVariable('approved') == false}"
+    },
+    {
+      "id": "Flow_R3",
+      "from": "Task_Sign",
+      "to": "Task_Submit",
+      "name": "驳回",
+      "condition": "${execution.getVariable('approved') == false}"
+    }
+  ]
+}

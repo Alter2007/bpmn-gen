@@ -1,0 +1,90 @@
+{
+  "templateId": "loan_request",
+  "name": "借款申请",
+  "description": "备用金借款：主管审批后由财务放款",
+  "keywords": [
+    "借款",
+    "备用金",
+    "预支",
+    "借支"
+  ],
+  "slotOrder": [],
+  "slots": [],
+  "processId": "loanRequest",
+  "processName": "借款申请",
+  "variables": [
+    {
+      "name": "amount",
+      "type": "number",
+      "description": "借款金额"
+    }
+  ],
+  "nodes": [
+    {
+      "id": "StartEvent_1",
+      "type": "startEvent",
+      "name": "发起借款申请"
+    },
+    {
+      "id": "Task_Submit",
+      "type": "userTask",
+      "name": "提交借款申请",
+      "assignee": "${initiator}"
+    },
+    {
+      "id": "Task_Leader",
+      "type": "userTask",
+      "name": "主管审批",
+      "assignee": "${manager}"
+    },
+    {
+      "id": "Task_Finance",
+      "type": "userTask",
+      "name": "财务放款",
+      "assignee": "${finance}"
+    },
+    {
+      "id": "EndEvent_1",
+      "type": "endEvent",
+      "name": "流程结束"
+    }
+  ],
+  "flows": [
+    {
+      "id": "Flow_1",
+      "from": "StartEvent_1",
+      "to": "Task_Submit"
+    },
+    {
+      "id": "Flow_2",
+      "from": "Task_Submit",
+      "to": "Task_Leader"
+    },
+    {
+      "id": "Flow_A1",
+      "from": "Task_Leader",
+      "to": "Task_Finance",
+      "default": true
+    },
+    {
+      "id": "Flow_End",
+      "from": "Task_Finance",
+      "to": "EndEvent_1",
+      "default": true
+    },
+    {
+      "id": "Flow_R1",
+      "from": "Task_Leader",
+      "to": "Task_Submit",
+      "name": "驳回",
+      "condition": "${execution.getVariable('approved') == false}"
+    },
+    {
+      "id": "Flow_R2",
+      "from": "Task_Finance",
+      "to": "Task_Submit",
+      "name": "驳回",
+      "condition": "${execution.getVariable('approved') == false}"
+    }
+  ]
+}

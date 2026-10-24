@@ -1,0 +1,90 @@
+{
+  "templateId": "contract_terminate",
+  "name": "合同终止",
+  "description": "合同解除：法务审核后由财务确认结算",
+  "keywords": [
+    "合同终止",
+    "解约",
+    "合同解除",
+    "终止合作"
+  ],
+  "slotOrder": [],
+  "slots": [],
+  "processId": "contractTerminate",
+  "processName": "合同终止",
+  "variables": [
+    {
+      "name": "contractNo",
+      "type": "string",
+      "description": "合同编号"
+    }
+  ],
+  "nodes": [
+    {
+      "id": "StartEvent_1",
+      "type": "startEvent",
+      "name": "发起合同终止"
+    },
+    {
+      "id": "Task_Submit",
+      "type": "userTask",
+      "name": "提交终止申请",
+      "assignee": "${initiator}"
+    },
+    {
+      "id": "Task_Legal",
+      "type": "userTask",
+      "name": "法务审核",
+      "assignee": "${legal}"
+    },
+    {
+      "id": "Task_Finance",
+      "type": "userTask",
+      "name": "财务结算确认",
+      "assignee": "${finance}"
+    },
+    {
+      "id": "EndEvent_1",
+      "type": "endEvent",
+      "name": "流程结束"
+    }
+  ],
+  "flows": [
+    {
+      "id": "Flow_1",
+      "from": "StartEvent_1",
+      "to": "Task_Submit"
+    },
+    {
+      "id": "Flow_2",
+      "from": "Task_Submit",
+      "to": "Task_Legal"
+    },
+    {
+      "id": "Flow_A1",
+      "from": "Task_Legal",
+      "to": "Task_Finance",
+      "default": true
+    },
+    {
+      "id": "Flow_End",
+      "from": "Task_Finance",
+      "to": "EndEvent_1",
+      "default": true
+    },
+    {
+      "id": "Flow_R1",
+      "from": "Task_Legal",
+      "to": "Task_Submit",
+      "name": "驳回",
+      "condition": "${execution.getVariable('approved') == false}"
+    },
+    {
+      "id": "Flow_R2",
+      "from": "Task_Finance",
+      "to": "Task_Submit",
+      "name": "驳回",
+      "condition": "${execution.getVariable('approved') == false}"
+    }
+  ]
+}

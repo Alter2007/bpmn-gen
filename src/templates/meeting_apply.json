@@ -1,0 +1,110 @@
+{
+  "templateId": "meeting_apply",
+  "name": "会议审批",
+  "description": "会议申报：一般会议分管领导审批，重要会议需主要领导审批",
+  "keywords": [
+    "会议",
+    "开会",
+    "会议审批",
+    "议题",
+    "会议室"
+  ],
+  "slotOrder": [],
+  "slots": [],
+  "processId": "meetingApply",
+  "processName": "会议审批",
+  "variables": [
+    {
+      "name": "level",
+      "type": "number",
+      "description": "会议级别（1=一般，2=重要）"
+    }
+  ],
+  "nodes": [
+    {
+      "id": "StartEvent_1",
+      "type": "startEvent",
+      "name": "发起会议申报"
+    },
+    {
+      "id": "Task_Submit",
+      "type": "userTask",
+      "name": "提交会议申请",
+      "assignee": "${initiator}"
+    },
+    {
+      "id": "Gateway_1",
+      "type": "exclusiveGateway",
+      "name": "会议级别判断"
+    },
+    {
+      "id": "Task_Leader",
+      "type": "userTask",
+      "name": "分管领导审批",
+      "assignee": "${manager}"
+    },
+    {
+      "id": "Task_Chief",
+      "type": "userTask",
+      "name": "主要领导审批",
+      "assignee": "${gm}"
+    },
+    {
+      "id": "EndEvent_1",
+      "type": "endEvent",
+      "name": "会议安排完成"
+    }
+  ],
+  "flows": [
+    {
+      "id": "Flow_1",
+      "from": "StartEvent_1",
+      "to": "Task_Submit"
+    },
+    {
+      "id": "Flow_2",
+      "from": "Task_Submit",
+      "to": "Gateway_1"
+    },
+    {
+      "id": "Flow_3",
+      "from": "Gateway_1",
+      "to": "Task_Leader",
+      "name": "一般会议",
+      "condition": "${level == 1}"
+    },
+    {
+      "id": "Flow_4",
+      "from": "Gateway_1",
+      "to": "Task_Chief",
+      "name": "重要会议",
+      "default": true
+    },
+    {
+      "id": "Flow_5",
+      "from": "Task_Leader",
+      "to": "EndEvent_1",
+      "default": true
+    },
+    {
+      "id": "Flow_6",
+      "from": "Task_Chief",
+      "to": "EndEvent_1",
+      "default": true
+    },
+    {
+      "id": "Flow_7",
+      "from": "Task_Leader",
+      "to": "Task_Submit",
+      "name": "驳回",
+      "condition": "${execution.getVariable('approved') == false}"
+    },
+    {
+      "id": "Flow_8",
+      "from": "Task_Chief",
+      "to": "Task_Submit",
+      "name": "驳回",
+      "condition": "${execution.getVariable('approved') == false}"
+    }
+  ]
+}
