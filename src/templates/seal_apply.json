@@ -84,12 +84,14 @@
     {
       "id": "Flow_3",
       "from": "Task_Approve",
-      "to": "Gateway_Outbound"
+      "to": "Gateway_Outbound",
+      "default": true
     },
     {
       "id": "Flow_4",
       "from": "Task_Register",
-      "to": "EndEvent_1"
+      "to": "EndEvent_1",
+      "default": true
     },
     {
       "id": "Flow_Outbound_Y",
@@ -114,6 +116,20 @@
     {
       "id": "Flow_Outbound_R",
       "from": "Task_Legal",
+      "to": "Task_Submit",
+      "name": "驳回",
+      "condition": "${execution.getVariable('approved') != null && execution.getVariable('approved') == false}"
+    },
+    {
+      "id": "Flow_R_Task_Approve",
+      "from": "Task_Approve",
+      "to": "Task_Submit",
+      "name": "驳回",
+      "condition": "${execution.getVariable('approved') != null && execution.getVariable('approved') == false}"
+    },
+    {
+      "id": "Flow_R_Task_Register",
+      "from": "Task_Register",
       "to": "Task_Submit",
       "name": "驳回",
       "condition": "${execution.getVariable('approved') != null && execution.getVariable('approved') == false}"

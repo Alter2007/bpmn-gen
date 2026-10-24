@@ -2,30 +2,133 @@
   "templateId": "leave_days",
   "name": "请假天数审批",
   "description": "按请假天数分流：短期主管审批，长期走人事备案",
-  "keywords": ["请假", "休假", "年假", "调休", "天数", "人事", "天", "病假"],
-  "slotOrder": ["tier1"],
+  "keywords": [
+    "请假",
+    "休假",
+    "年假",
+    "调休",
+    "天数",
+    "人事",
+    "天",
+    "病假"
+  ],
+  "slotOrder": [
+    "tier1"
+  ],
   "slots": [
-    { "name": "subject", "type": "string", "default": "请假", "label": "业务对象" },
-    { "name": "varName", "type": "string", "default": "days", "label": "天数变量名" },
-    { "name": "tier1", "type": "number", "default": 3, "label": "免升级天数" }
+    {
+      "name": "subject",
+      "type": "string",
+      "default": "请假",
+      "label": "业务对象"
+    },
+    {
+      "name": "varName",
+      "type": "string",
+      "default": "days",
+      "label": "天数变量名"
+    },
+    {
+      "name": "tier1",
+      "type": "number",
+      "default": 3,
+      "label": "免升级天数"
+    }
   ],
   "processId": "leaveDays",
   "processName": "@subject@审批流",
-  "variables": [{ "name": "@varName@", "type": "number", "description": "请假天数" }],
+  "variables": [
+    {
+      "name": "@varName@",
+      "type": "number",
+      "description": "请假天数"
+    }
+  ],
   "nodes": [
-    { "id": "StartEvent_1", "type": "startEvent", "name": "提交@subject@申请" },
-    { "id": "Task_Fill", "type": "userTask", "name": "填写@subject@单", "assignee": "${initiator}" },
-    { "id": "Gateway_1", "type": "exclusiveGateway", "name": "@subject@天数判断" },
-    { "id": "Task_Leader", "type": "userTask", "name": "直属主管审批", "assignee": "${leader}" },
-    { "id": "Task_HR", "type": "userTask", "name": "人事备案", "assignee": "${hr}" },
-    { "id": "EndEvent_1", "type": "endEvent", "name": "结束" }
+    {
+      "id": "StartEvent_1",
+      "type": "startEvent",
+      "name": "提交@subject@申请"
+    },
+    {
+      "id": "Task_Fill",
+      "type": "userTask",
+      "name": "填写@subject@单",
+      "assignee": "${initiator}"
+    },
+    {
+      "id": "Gateway_1",
+      "type": "exclusiveGateway",
+      "name": "@subject@天数判断"
+    },
+    {
+      "id": "Task_Leader",
+      "type": "userTask",
+      "name": "直属主管审批",
+      "assignee": "${leader}"
+    },
+    {
+      "id": "Task_HR",
+      "type": "userTask",
+      "name": "人事备案",
+      "assignee": "${hr}"
+    },
+    {
+      "id": "EndEvent_1",
+      "type": "endEvent",
+      "name": "结束"
+    }
   ],
   "flows": [
-    { "id": "Flow_1", "from": "StartEvent_1", "to": "Task_Fill" },
-    { "id": "Flow_2", "from": "Task_Fill", "to": "Gateway_1" },
-    { "id": "Flow_3", "from": "Gateway_1", "to": "Task_Leader", "name": "≤@tier1@天", "condition": "${@varName@ <= @tier1@}" },
-    { "id": "Flow_4", "from": "Gateway_1", "to": "Task_HR", "name": "超过@tier1@天", "default": true },
-    { "id": "Flow_5", "from": "Task_Leader", "to": "EndEvent_1" },
-    { "id": "Flow_6", "from": "Task_HR", "to": "EndEvent_1" }
+    {
+      "id": "Flow_1",
+      "from": "StartEvent_1",
+      "to": "Task_Fill"
+    },
+    {
+      "id": "Flow_2",
+      "from": "Task_Fill",
+      "to": "Gateway_1"
+    },
+    {
+      "id": "Flow_3",
+      "from": "Gateway_1",
+      "to": "Task_Leader",
+      "name": "≤@tier1@天",
+      "condition": "${@varName@ <= @tier1@}"
+    },
+    {
+      "id": "Flow_4",
+      "from": "Gateway_1",
+      "to": "Task_HR",
+      "name": "超过@tier1@天",
+      "default": true
+    },
+    {
+      "id": "Flow_5",
+      "from": "Task_Leader",
+      "to": "EndEvent_1",
+      "default": true
+    },
+    {
+      "id": "Flow_6",
+      "from": "Task_HR",
+      "to": "EndEvent_1",
+      "default": true
+    },
+    {
+      "id": "Flow_R_Task_Leader",
+      "from": "Task_Leader",
+      "to": "Task_Fill",
+      "name": "驳回",
+      "condition": "${execution.getVariable('approved') != null && execution.getVariable('approved') == false}"
+    },
+    {
+      "id": "Flow_R_Task_HR",
+      "from": "Task_HR",
+      "to": "Task_Fill",
+      "name": "驳回",
+      "condition": "${execution.getVariable('approved') != null && execution.getVariable('approved') == false}"
+    }
   ]
 }

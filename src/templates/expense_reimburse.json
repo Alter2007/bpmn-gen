@@ -91,17 +91,20 @@
     {
       "id": "Flow_3",
       "from": "Task_Dept",
-      "to": "Task_Finance"
+      "to": "Task_Finance",
+      "default": true
     },
     {
       "id": "Flow_4",
       "from": "Task_Finance",
-      "to": "Task_Archive"
+      "to": "Task_Archive",
+      "default": true
     },
     {
       "id": "Flow_5",
       "from": "Task_Archive",
-      "to": "EndEvent_1"
+      "to": "EndEvent_1",
+      "default": true
     },
     {
       "id": "Flow_HasEntertainment_Y",
@@ -126,6 +129,27 @@
     {
       "id": "Flow_HasEntertainment_R",
       "from": "Task_HasEntertainment",
+      "to": "Task_Submit",
+      "name": "驳回",
+      "condition": "${execution.getVariable('approved') != null && execution.getVariable('approved') == false}"
+    },
+    {
+      "id": "Flow_R_Task_Dept",
+      "from": "Task_Dept",
+      "to": "Task_Submit",
+      "name": "驳回",
+      "condition": "${execution.getVariable('approved') != null && execution.getVariable('approved') == false}"
+    },
+    {
+      "id": "Flow_R_Task_Finance",
+      "from": "Task_Finance",
+      "to": "Task_Submit",
+      "name": "驳回",
+      "condition": "${execution.getVariable('approved') != null && execution.getVariable('approved') == false}"
+    },
+    {
+      "id": "Flow_R_Task_Archive",
+      "from": "Task_Archive",
       "to": "Task_Submit",
       "name": "驳回",
       "condition": "${execution.getVariable('approved') != null && execution.getVariable('approved') == false}"

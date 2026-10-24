@@ -111,13 +111,13 @@ demo.cmd
 
 | 层 | 手段 | 结果 |
 |---|---|---|
-| 单元/回归 | `node test\run.js` | ✅ **318 项断言** |
+| 单元/回归 | `node test\run.js` | ✅ **348 项断言** |
 | L1 良构 / L0 契约 / L3 图论 | 自研 `xml-lint.js` / `ir.js` / `graph.js` | ✅ |
 | L2 规范 | **OMG 官方 XSD** + JDK 17 | ✅ **65/65 文件** |
 | L2b 模型 | 第三方 `bpmn-moddle` | ✅ **65/65 文件** |
 | L4-lite 引擎 | **Flowable 7.2.0** 官方 `ProcessValidator` | ✅ **65/65 文件** |
 | **L4 实例运行** | Flowable + H2 内存引擎：真实部署、启动、走完、路径断言 | ✅ **113 条** |
-| **分支覆盖** | `scripts/coverage-specs.js` 按模板自动生成 | ✅ **100 条 / 28 模板** |
+| **分支覆盖** | `scripts/coverage-specs.js` 按模板自动生成 | ✅ **104 条 / 28 模板** |
 | 对照实验基线 | `scripts/compare-raw-xml.js --dry-run` | ✅ 12/12 |
 
 **同一份 BPMN、不同变量走不同分支**（L4 实测）：
@@ -164,7 +164,7 @@ bpmn-gen/
 ├─ src/           生成内核（零依赖）：ir / graph / layout / serialize / nl / artifacts + 28 个模板
 ├─ web/           桌面应用（唯一有依赖）：index.html / app.js / serve.js
 ├─ tools/         Java 单文件验证器：XSD / Flowable 引擎 / 实例运行
-├─ test/          318 项断言 + 用例目录
+├─ test/          348 项断言 + 用例目录
 ├─ scripts/       bpmn2svg / coverage-specs / compare-raw-xml / 下载脚本
 ├─ docs/          报告 PDF、架构、交付清单、配图
 └─ .github/       CI：每次 push 自动跑六层验证

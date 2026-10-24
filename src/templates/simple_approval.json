@@ -87,7 +87,8 @@
     {
       "id": "Flow_3",
       "from": "Task_Approve",
-      "to": "EndEvent_1"
+      "to": "EndEvent_1",
+      "default": true
     },
     {
       "id": "Flow_NeedReview_Y",
@@ -112,6 +113,13 @@
     {
       "id": "Flow_NeedReview_R",
       "from": "Task_NeedReview",
+      "to": "Task_Submit",
+      "name": "驳回",
+      "condition": "${execution.getVariable('approved') != null && execution.getVariable('approved') == false}"
+    },
+    {
+      "id": "Flow_R_Task_Approve",
+      "from": "Task_Approve",
       "to": "Task_Submit",
       "name": "驳回",
       "condition": "${execution.getVariable('approved') != null && execution.getVariable('approved') == false}"

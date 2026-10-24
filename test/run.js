@@ -505,6 +505,64 @@ function runHelpPageUnit() {
   check('app.js 有页码翻页逻辑', app.indexOf('helpShow') !== -1);
   check('app.js 有生成提示渲染', app.indexOf('renderGenWarnings') !== -1);
 }
+// ---------------- 模板契约：驳回覆盖 ----------------
+// 真实审批系统里每个待办都有"退回"按钮。之前 28 个模板里只有 11 个做到，
+// 7 个模板的审批任务完全不能退回——这里把"除提交任务外全可驳回"锁成不变量。
+function runTemplateInvariants() {
+  console.log('');
+  console.log('== 模板契约（驳回覆盖 / 分支完整性）==');
+
+  const tpls = loadTemplates();
+  check('模板数量 >= 28', tpls.length >= 28, '当前 ' + tpls.length);
+
+  let fullCoverage = 0;
+  const bad = [];
+  for (const t of tpls) {
+    const nodes = t.nodes || [];
+    const flows = t.flows || [];
+    const tasks = nodes.filter((n) => n.type === 'userTask');
+    const rejects = flows.filter((f) => f.name === '驳回');
+    const rejectFrom = new Set(rejects.map((f) => f.from));
+
+    // 提交任务（从开始事件走到的第一个 userTask）本来就不需要驳回
+    const start = nodes.filter((n) => n.type === 'startEvent')[0];
+    let submitId = null;
+    if (start) {
+      const byFrom = new Map();
+      for (const f of flows) {
+        if (!byFrom.has(f.from)) byFrom.set(f.from, []);
+        byFrom.get(f.from).push(f);
+      }
+      let cur = start.id;
+      for (let i = 0; i < 20 && cur; i++) {
+        const outs = (byFrom.get(cur) || []).filter((f) => f.name !== '驳回');
+        if (outs.length !== 1) break;
+        const nx = nodes.filter((n) => n.id === outs[0].to)[0];
+        if (!nx) break;
+        if (nx.type === 'userTask') { submitId = nx.id; break; }
+        if (nx.type === 'endEvent') break;
+        cur = nx.id;
+      }
+    }
+
+    const needReject = tasks.filter((n) => n.id !== submitId);
+    const missing = needReject.filter((n) => !rejectFrom.has(n.id)).map((n) => n.name);
+    if (missing.length === 0) fullCoverage++;
+    else bad.push(t.templateId + '：' + missing.join('/'));
+
+    // 同一任务不允许有多条驳回
+    const dup = [];
+    const seen = new Set();
+    for (const f of rejects) {
+      if (seen.has(f.from)) dup.push(f.from);
+      seen.add(f.from);
+    }
+    check(t.templateId + ' / 驳回不重复', dup.length === 0, dup.join(','));
+  }
+
+  check('每个模板的审批任务都能驳回', fullCoverage === tpls.length,
+    '完整 ' + fullCoverage + ' / ' + tpls.length + '；缺: ' + bad.join(' | '));
+}
 function main() {
   console.log('BPMN 生成器测试套件');
   console.log('='.repeat(52));
@@ -515,6 +573,7 @@ function main() {
   runRepairUnit();
   runNlCases();
   runNumericUnit();
+  runTemplateInvariants();
   runPromptUnit();
   runArtifactsUnit();
   runHelpPageUnit();
