@@ -33,7 +33,7 @@
       "id": "Task_Submit",
       "type": "userTask",
       "name": "提交@subject@申请",
-      "assignee": "${hr}"
+      "candidateGroups": "role_hr"
     },
     {
       "id": "Gateway_Split",
@@ -44,19 +44,19 @@
       "id": "Task_HR",
       "type": "userTask",
       "name": "人事建档",
-      "assignee": "${hr}"
+      "candidateGroups": "role_hr"
     },
     {
       "id": "Task_IT",
       "type": "userTask",
       "name": "IT 开户",
-      "assignee": "${it}"
+      "candidateGroups": "role_it"
     },
     {
       "id": "Task_Admin",
       "type": "userTask",
       "name": "行政分配工位",
-      "assignee": "${admin}"
+      "candidateGroups": "role_admin"
     },
     {
       "id": "Gateway_Join",

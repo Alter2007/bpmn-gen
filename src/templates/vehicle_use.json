@@ -45,19 +45,19 @@
       "id": "Task_OutOfCity",
       "type": "userTask",
       "name": "行政经理审批",
-      "assignee": "${admin}"
+      "candidateGroups": "role_admin"
     },
     {
       "id": "Task_Leader",
       "type": "userTask",
       "name": "主管审批",
-      "assignee": "${manager}"
+      "candidateGroups": "role_manager"
     },
     {
       "id": "Task_Fleet",
       "type": "userTask",
       "name": "车队派车",
-      "assignee": "${fleet}"
+      "candidateGroups": "role_fleet"
     },
     {
       "id": "EndEvent_1",

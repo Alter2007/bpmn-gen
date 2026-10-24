@@ -162,6 +162,33 @@ function buildDoc(ir) {
   // 驳回回路：目标在流程里"更靠前"的连线
   const order = new Map(nodes.map((n, i) => [n.id, i]));
   const back = flows.filter((f) => order.has(f.from) && order.has(f.to) && order.get(f.to) < order.get(f.from));
+
+  // 所需角色组：部署前引擎里必须把这些组建好、组里加人，否则任务没人看得到
+  const roleSet = new Map();
+  for (const n of nodes) {
+    if (!n.candidateGroups) continue;
+    for (const g of String(n.candidateGroups).split(',')) {
+      const key = g.trim();
+      if (!key) continue;
+      if (!roleSet.has(key)) roleSet.set(key, []);
+      roleSet.get(key).push(n.name || n.id);
+    }
+  }
+  lines.push('## 所需角色组（部署前先配好）');
+  lines.push('');
+  if (roleSet.size === 0) {
+    lines.push('（本流程的审批人都是发起人本人或指定变量，无需角色组）');
+  } else {
+    lines.push('| 角色组（candidateGroups） | 用于 | 说明 |');
+    lines.push('|---|---|---|');
+    for (const [g, tasks] of roleSet) {
+      lines.push('| `' + g + '` | ' + tasks.join('、') + ' | 引擎里建同名组并加人；组名可改，但要同步改 .bpmn |');
+    }
+    lines.push('');
+    lines.push('> 组名与中文角色的对应关系见 `src/org-roles.json`；发起人是流程变量，由启动实例时指定。');
+  }
+  lines.push('');
+
   lines.push('## 驳回 / 退回路径');
   lines.push('');
   if (back.length === 0) {

@@ -25,8 +25,8 @@
     {
       "name": "approver",
       "type": "string",
-      "default": "${manager}",
-      "label": "审批人"
+      "default": "role_manager",
+      "label": "审批角色组"
     }
   ],
   "processId": "simpleApproval",
@@ -59,13 +59,13 @@
       "id": "Task_NeedReview",
       "type": "userTask",
       "name": "上级复核",
-      "assignee": "${director}"
+      "candidateGroups": "role_director"
     },
     {
       "id": "Task_Approve",
       "type": "userTask",
       "name": "审批",
-      "assignee": "@approver@"
+      "candidateGroups": "@approver@"
     },
     {
       "id": "EndEvent_1",

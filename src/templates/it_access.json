@@ -41,7 +41,7 @@
       "id": "Task_Leader",
       "type": "userTask",
       "name": "主管审批",
-      "assignee": "${manager}"
+      "candidateGroups": "role_manager"
     },
     {
       "id": "Gateway_Prod",
@@ -52,13 +52,13 @@
       "id": "Task_OpsDir",
       "type": "userTask",
       "name": "运维总监审批",
-      "assignee": "${opsDirector}"
+      "candidateGroups": "role_opsDirector"
     },
     {
       "id": "Task_It",
       "type": "userTask",
       "name": "IT 开通",
-      "assignee": "${it}"
+      "candidateGroups": "role_it"
     },
     {
       "id": "EndEvent_1",

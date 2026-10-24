@@ -41,13 +41,13 @@
       "id": "Task_Leader",
       "type": "userTask",
       "name": "分管领导审批",
-      "assignee": "${manager}"
+      "candidateGroups": "role_manager"
     },
     {
       "id": "Task_Chief",
       "type": "userTask",
       "name": "主要领导审批",
-      "assignee": "${gm}"
+      "candidateGroups": "role_gm"
     },
     {
       "id": "EndEvent_1",

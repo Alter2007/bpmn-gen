@@ -42,12 +42,12 @@
       "id": "Task_Sign",
       "type": "userTask",
       "name": "或签",
-      "assignee": "${approver}",
       "multiInstance": {
         "collection": "approvers",
         "elementVariable": "approver",
         "completionCondition": "${nrOfCompletedInstances >= 1}"
-      }
+      },
+      "candidateGroups": "role_approver"
     },
     {
       "id": "EndEvent_1",

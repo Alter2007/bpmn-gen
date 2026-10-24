@@ -65,13 +65,13 @@
       "id": "Task_Leader",
       "type": "userTask",
       "name": "直属主管审批",
-      "assignee": "${leader}"
+      "candidateGroups": "role_leader"
     },
     {
       "id": "Task_HR",
       "type": "userTask",
       "name": "人事备案",
-      "assignee": "${hr}"
+      "candidateGroups": "role_hr"
     },
     {
       "id": "EndEvent_1",

@@ -659,6 +659,55 @@ function runLayoutUnit() {
     backEntries.slice(0, 5).join(' | '));
 }
 
+// ---------------- 处理人可部署性 ----------------
+// 真实部署的硬要求：.bpmn 里引用的处理人变量必须有值、角色组必须真实存在。
+// 之前 109 个节点全用 ${manager} 这类占位符，启动实例就报 Unknown property，
+// 我们自己的测试是靠"自动注入假变量"绕过去的——真实引擎里没人给你注入。
+function runAssignmentUnit() {
+  console.log('');
+  console.log('== 处理人可部署性（变量 / 角色组）==');
+
+  const rolesPath = path.join(__dirname, '..', 'src', 'org-roles.json');
+  check('存在角色映射表 src/org-roles.json', fs.existsSync(rolesPath));
+  if (!fs.existsSync(rolesPath)) return;
+  const rolesDoc = JSON.parse(fs.readFileSync(rolesPath, 'utf8'));
+  const knownGroups = new Set((rolesDoc.roles || []).map((r) => r.group));
+  check('角色映射表非空', knownGroups.size > 0, knownGroups.size + ' 个');
+
+  const tpls = loadTemplates();
+  const unknownGroups = [];
+  const undefinedVars = [];
+  let checkedTasks = 0;
+
+  for (const tpl of tpls) {
+    const built = buildFromTemplate(tpl.templateId, {}, '');
+    if (!built) continue;
+    const r = runPipeline(built.ir);
+    if (!r.ok) continue;
+    const declared = new Set((r.ir.variables || []).map((v) => v.name));
+    declared.add('initiator');
+
+    // 所有 userTask 的处理人写法
+    const tasks = r.xml.match(/<bpmn:userTask[^>]*>/g) || [];
+    for (const tag of tasks) {
+      checkedTasks++;
+      const as = /flowable:assignee="\$\{([^}]+)\}"/.exec(tag);
+      if (as && !declared.has(as[1])) undefinedVars.push(tpl.templateId + ': assignee ${' + as[1] + '}');
+      const cg = /flowable:candidateGroups="([^"]+)"/.exec(tag);
+      if (cg) {
+        for (const g of cg[1].split(',')) {
+          const key = g.trim();
+          if (key && !knownGroups.has(key)) unknownGroups.push(tpl.templateId + ': ' + key);
+        }
+      }
+    }
+  }
+
+  check('检查了所有模板的处理人', checkedTasks > 50, checkedTasks + ' 个任务');
+  check('没有未定义的处理人变量', undefinedVars.length === 0, undefinedVars.slice(0, 5).join(' | '));
+  check('角色组都在映射表里', unknownGroups.length === 0, unknownGroups.slice(0, 5).join(' | '));
+}
+
 function main() {
   console.log('BPMN 生成器测试套件');
   console.log('='.repeat(52));
@@ -671,6 +720,7 @@ function main() {
   runNumericUnit();
   runTemplateInvariants();
   runLayoutUnit();
+  runAssignmentUnit();
   runPromptUnit();
   runArtifactsUnit();
   runHelpPageUnit();

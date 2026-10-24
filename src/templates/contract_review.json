@@ -44,19 +44,19 @@
       "id": "Task_Legal",
       "type": "userTask",
       "name": "法务审核",
-      "assignee": "${legal}"
+      "candidateGroups": "role_legal"
     },
     {
       "id": "Task_Finance",
       "type": "userTask",
       "name": "财务审核",
-      "assignee": "${finance}"
+      "candidateGroups": "role_finance"
     },
     {
       "id": "Task_Business",
       "type": "userTask",
       "name": "业务审核",
-      "assignee": "${business}"
+      "candidateGroups": "role_business"
     },
     {
       "id": "Gateway_Join",

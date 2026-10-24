@@ -53,8 +53,8 @@
       "id": "Task_Approve",
       "type": "userTask",
       "name": "主管审批",
-      "assignee": "${manager}",
-      "default": true
+      "default": true,
+      "candidateGroups": "role_manager"
     },
     {
       "id": "Boundary_Timeout",
@@ -71,7 +71,7 @@
       "id": "Task_Escalate",
       "type": "userTask",
       "name": "上级审批",
-      "assignee": "${director}"
+      "candidateGroups": "role_director"
     },
     {
       "id": "EndEvent_1",

@@ -45,19 +45,19 @@
       "id": "Task_Overseas",
       "type": "userTask",
       "name": "行政审核",
-      "assignee": "${admin}"
+      "candidateGroups": "role_admin"
     },
     {
       "id": "Task_Leader",
       "type": "userTask",
       "name": "直属主管审批",
-      "assignee": "${manager}"
+      "candidateGroups": "role_manager"
     },
     {
       "id": "Task_Admin",
       "type": "userTask",
       "name": "行政备案",
-      "assignee": "${admin}"
+      "candidateGroups": "role_admin"
     },
     {
       "id": "EndEvent_1",

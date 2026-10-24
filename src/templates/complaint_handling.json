@@ -46,25 +46,25 @@
       "id": "Task_Major",
       "type": "userTask",
       "name": "主要领导审批",
-      "assignee": "${leader}"
+      "candidateGroups": "role_leader"
     },
     {
       "id": "Task_Assign",
       "type": "userTask",
       "name": "分办",
-      "assignee": "${dispatcher}"
+      "candidateGroups": "role_dispatcher"
     },
     {
       "id": "Task_Handle",
       "type": "userTask",
       "name": "责任部门处理",
-      "assignee": "${handler}"
+      "candidateGroups": "role_handler"
     },
     {
       "id": "Task_Review",
       "type": "userTask",
       "name": "回访确认",
-      "assignee": "${reviewer}"
+      "candidateGroups": "role_reviewer"
     },
     {
       "id": "EndEvent_1",

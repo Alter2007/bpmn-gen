@@ -1,0 +1,223 @@
+{
+  "version": 1,
+  "note": "生成物里的审批人用角色组（flowable:candidateGroups）表达。部署前请在引擎里按本表建组并加人。",
+  "generatedAt": "2026-10-24",
+  "roles": [
+    {
+      "group": "role_@approver@",
+      "label": "@approver@",
+      "kind": "candidateGroup",
+      "suggestedGroupId": "@approver@",
+      "usedByTemplates": 1,
+      "description": "候选组：引擎里把该组成员配好，任务就会出现在这些人的待办里；组名可改，但要同步改 .bpmn 里的 role_xxx。"
+    },
+    {
+      "group": "role_accountant",
+      "label": "会计",
+      "kind": "candidateGroup",
+      "suggestedGroupId": "accountant",
+      "usedByTemplates": 1,
+      "description": "候选组：引擎里把该组成员配好，任务就会出现在这些人的待办里；组名可改，但要同步改 .bpmn 里的 role_xxx。"
+    },
+    {
+      "group": "role_admin",
+      "label": "行政",
+      "kind": "candidateGroup",
+      "suggestedGroupId": "admin",
+      "usedByTemplates": 7,
+      "description": "候选组：引擎里把该组成员配好，任务就会出现在这些人的待办里；组名可改，但要同步改 .bpmn 里的 role_xxx。"
+    },
+    {
+      "group": "role_approver",
+      "label": "会签成员",
+      "kind": "candidateGroup",
+      "suggestedGroupId": "cosign_members",
+      "usedByTemplates": 2,
+      "description": "候选组：引擎里把该组成员配好，任务就会出现在这些人的待办里；组名可改，但要同步改 .bpmn 里的 role_xxx。"
+    },
+    {
+      "group": "role_business",
+      "label": "业务部门",
+      "kind": "candidateGroup",
+      "suggestedGroupId": "business_dept",
+      "usedByTemplates": 1,
+      "description": "候选组：引擎里把该组成员配好，任务就会出现在这些人的待办里；组名可改，但要同步改 .bpmn 里的 role_xxx。"
+    },
+    {
+      "group": "role_cosign",
+      "label": "会签方",
+      "kind": "candidateGroup",
+      "suggestedGroupId": "cosign",
+      "usedByTemplates": 1,
+      "description": "候选组：引擎里把该组成员配好，任务就会出现在这些人的待办里；组名可改，但要同步改 .bpmn 里的 role_xxx。"
+    },
+    {
+      "group": "role_deptManager",
+      "label": "部门经理",
+      "kind": "candidateGroup",
+      "suggestedGroupId": "dept_manager",
+      "usedByTemplates": 2,
+      "description": "候选组：引擎里把该组成员配好，任务就会出现在这些人的待办里；组名可改，但要同步改 .bpmn 里的 role_xxx。"
+    },
+    {
+      "group": "role_director",
+      "label": "总监",
+      "kind": "candidateGroup",
+      "suggestedGroupId": "director",
+      "usedByTemplates": 5,
+      "description": "候选组：引擎里把该组成员配好，任务就会出现在这些人的待办里；组名可改，但要同步改 .bpmn 里的 role_xxx。"
+    },
+    {
+      "group": "role_dispatcher",
+      "label": "投诉分办人",
+      "kind": "candidateGroup",
+      "suggestedGroupId": "dispatcher",
+      "usedByTemplates": 1,
+      "description": "候选组：引擎里把该组成员配好，任务就会出现在这些人的待办里；组名可改，但要同步改 .bpmn 里的 role_xxx。"
+    },
+    {
+      "group": "role_finance",
+      "label": "财务",
+      "kind": "candidateGroup",
+      "suggestedGroupId": "finance",
+      "usedByTemplates": 11,
+      "description": "候选组：引擎里把该组成员配好，任务就会出现在这些人的待办里；组名可改，但要同步改 .bpmn 里的 role_xxx。"
+    },
+    {
+      "group": "role_financeDirector",
+      "label": "财务总监",
+      "kind": "candidateGroup",
+      "suggestedGroupId": "finance_director",
+      "usedByTemplates": 3,
+      "description": "候选组：引擎里把该组成员配好，任务就会出现在这些人的待办里；组名可改，但要同步改 .bpmn 里的 role_xxx。"
+    },
+    {
+      "group": "role_fleet",
+      "label": "车队调度",
+      "kind": "candidateGroup",
+      "suggestedGroupId": "fleet",
+      "usedByTemplates": 1,
+      "description": "候选组：引擎里把该组成员配好，任务就会出现在这些人的待办里；组名可改，但要同步改 .bpmn 里的 role_xxx。"
+    },
+    {
+      "group": "role_gm",
+      "label": "总经理",
+      "kind": "candidateGroup",
+      "suggestedGroupId": "gm",
+      "usedByTemplates": 4,
+      "description": "候选组：引擎里把该组成员配好，任务就会出现在这些人的待办里；组名可改，但要同步改 .bpmn 里的 role_xxx。"
+    },
+    {
+      "group": "role_handler",
+      "label": "承办部门",
+      "kind": "candidateGroup",
+      "suggestedGroupId": "handler",
+      "usedByTemplates": 1,
+      "description": "候选组：引擎里把该组成员配好，任务就会出现在这些人的待办里；组名可改，但要同步改 .bpmn 里的 role_xxx。"
+    },
+    {
+      "group": "role_hr",
+      "label": "人事",
+      "kind": "candidateGroup",
+      "suggestedGroupId": "hr",
+      "usedByTemplates": 8,
+      "description": "候选组：引擎里把该组成员配好，任务就会出现在这些人的待办里；组名可改，但要同步改 .bpmn 里的 role_xxx。"
+    },
+    {
+      "group": "role_initiator",
+      "label": "发起人",
+      "kind": "variable",
+      "suggestedGroupId": "",
+      "usedByTemplates": 27,
+      "description": "发起人，由引擎在启动流程实例时指定（通常是当前登录用户）。"
+    },
+    {
+      "group": "role_it",
+      "label": "IT 运维",
+      "kind": "candidateGroup",
+      "suggestedGroupId": "it_ops",
+      "usedByTemplates": 2,
+      "description": "候选组：引擎里把该组成员配好，任务就会出现在这些人的待办里；组名可改，但要同步改 .bpmn 里的 role_xxx。"
+    },
+    {
+      "group": "role_leader",
+      "label": "主要领导",
+      "kind": "candidateGroup",
+      "suggestedGroupId": "top_leader",
+      "usedByTemplates": 5,
+      "description": "候选组：引擎里把该组成员配好，任务就会出现在这些人的待办里；组名可改，但要同步改 .bpmn 里的 role_xxx。"
+    },
+    {
+      "group": "role_legal",
+      "label": "法务",
+      "kind": "candidateGroup",
+      "suggestedGroupId": "legal",
+      "usedByTemplates": 5,
+      "description": "候选组：引擎里把该组成员配好，任务就会出现在这些人的待办里；组名可改，但要同步改 .bpmn 里的 role_xxx。"
+    },
+    {
+      "group": "role_manager",
+      "label": "直属主管",
+      "kind": "candidateGroup",
+      "suggestedGroupId": "dept_manager",
+      "usedByTemplates": 13,
+      "description": "候选组：引擎里把该组成员配好，任务就会出现在这些人的待办里；组名可改，但要同步改 .bpmn 里的 role_xxx。"
+    },
+    {
+      "group": "role_opsDirector",
+      "label": "运维总监",
+      "kind": "candidateGroup",
+      "suggestedGroupId": "ops_director",
+      "usedByTemplates": 1,
+      "description": "候选组：引擎里把该组成员配好，任务就会出现在这些人的待办里；组名可改，但要同步改 .bpmn 里的 role_xxx。"
+    },
+    {
+      "group": "role_purchase",
+      "label": "采购员",
+      "kind": "candidateGroup",
+      "suggestedGroupId": "purchase",
+      "usedByTemplates": 1,
+      "description": "候选组：引擎里把该组成员配好，任务就会出现在这些人的待办里；组名可改，但要同步改 .bpmn 里的 role_xxx。"
+    },
+    {
+      "group": "role_purchaseManager",
+      "label": "采购经理",
+      "kind": "candidateGroup",
+      "suggestedGroupId": "purchase_manager",
+      "usedByTemplates": 1,
+      "description": "候选组：引擎里把该组成员配好，任务就会出现在这些人的待办里；组名可改，但要同步改 .bpmn 里的 role_xxx。"
+    },
+    {
+      "group": "role_qualify",
+      "label": "资质审核",
+      "kind": "candidateGroup",
+      "suggestedGroupId": "qualify",
+      "usedByTemplates": 1,
+      "description": "候选组：引擎里把该组成员配好，任务就会出现在这些人的待办里；组名可改，但要同步改 .bpmn 里的 role_xxx。"
+    },
+    {
+      "group": "role_reviewer",
+      "label": "回访确认人",
+      "kind": "candidateGroup",
+      "suggestedGroupId": "reviewer",
+      "usedByTemplates": 2,
+      "description": "候选组：引擎里把该组成员配好，任务就会出现在这些人的待办里；组名可改，但要同步改 .bpmn 里的 role_xxx。"
+    },
+    {
+      "group": "role_sealKeeper",
+      "label": "印章管理员",
+      "kind": "candidateGroup",
+      "suggestedGroupId": "seal_keeper",
+      "usedByTemplates": 1,
+      "description": "候选组：引擎里把该组成员配好，任务就会出现在这些人的待办里；组名可改，但要同步改 .bpmn 里的 role_xxx。"
+    },
+    {
+      "group": "role_security",
+      "label": "安全保密",
+      "kind": "candidateGroup",
+      "suggestedGroupId": "security",
+      "usedByTemplates": 1,
+      "description": "候选组：引擎里把该组成员配好，任务就会出现在这些人的待办里；组名可改，但要同步改 .bpmn 里的 role_xxx。"
+    }
+  ]
+}

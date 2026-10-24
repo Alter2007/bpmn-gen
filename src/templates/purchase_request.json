@@ -71,19 +71,19 @@
       "id": "Task_Dept",
       "type": "userTask",
       "name": "部门经理审批",
-      "assignee": "${deptManager}"
+      "candidateGroups": "role_deptManager"
     },
     {
       "id": "Task_Purchase",
       "type": "userTask",
       "name": "采购部审批",
-      "assignee": "${purchaseManager}"
+      "candidateGroups": "role_purchaseManager"
     },
     {
       "id": "Task_Finance",
       "type": "userTask",
       "name": "财务总监审批",
-      "assignee": "${financeDirector}"
+      "candidateGroups": "role_financeDirector"
     },
     {
       "id": "EndEvent_1",

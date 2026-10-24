@@ -46,19 +46,19 @@
       "id": "Task_KeyProject",
       "type": "userTask",
       "name": "总经理审批",
-      "assignee": "${gm}"
+      "candidateGroups": "role_gm"
     },
     {
       "id": "Task_Dept",
       "type": "userTask",
       "name": "部门经理审批",
-      "assignee": "${manager}"
+      "candidateGroups": "role_manager"
     },
     {
       "id": "Task_Gm",
       "type": "userTask",
       "name": "总经理批准",
-      "assignee": "${gm}"
+      "candidateGroups": "role_gm"
     },
     {
       "id": "EndEvent_1",

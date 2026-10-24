@@ -45,7 +45,7 @@
       "id": "Task_Approve",
       "type": "userTask",
       "name": "行政审批",
-      "assignee": "${admin}"
+      "candidateGroups": "role_admin"
     },
     {
       "id": "Gateway_Outbound",
@@ -56,13 +56,13 @@
       "id": "Task_Legal",
       "type": "userTask",
       "name": "法务审核",
-      "assignee": "${legal}"
+      "candidateGroups": "role_legal"
     },
     {
       "id": "Task_Register",
       "type": "userTask",
       "name": "用印登记",
-      "assignee": "${sealKeeper}"
+      "candidateGroups": "role_sealKeeper"
     },
     {
       "id": "EndEvent_1",

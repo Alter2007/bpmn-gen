@@ -42,11 +42,11 @@
       "id": "Task_Sign",
       "type": "userTask",
       "name": "多人会签",
-      "assignee": "${approver}",
       "multiInstance": {
         "collection": "approvers",
         "elementVariable": "approver"
-      }
+      },
+      "candidateGroups": "role_approver"
     },
     {
       "id": "EndEvent_1",

@@ -46,19 +46,19 @@
       "id": "Task_Disposal",
       "type": "userTask",
       "name": "资产管理员复核",
-      "assignee": "${admin}"
+      "candidateGroups": "role_admin"
     },
     {
       "id": "Task_Dept",
       "type": "userTask",
       "name": "部门审批",
-      "assignee": "${manager}"
+      "candidateGroups": "role_manager"
     },
     {
       "id": "Task_Admin",
       "type": "userTask",
       "name": "行政登记",
-      "assignee": "${admin}"
+      "candidateGroups": "role_admin"
     },
     {
       "id": "EndEvent_1",

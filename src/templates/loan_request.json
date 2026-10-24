@@ -45,19 +45,19 @@
       "id": "Task_Overdue",
       "type": "userTask",
       "name": "财务总监审批",
-      "assignee": "${financeDirector}"
+      "candidateGroups": "role_financeDirector"
     },
     {
       "id": "Task_Leader",
       "type": "userTask",
       "name": "主管审批",
-      "assignee": "${manager}"
+      "candidateGroups": "role_manager"
     },
     {
       "id": "Task_Finance",
       "type": "userTask",
       "name": "财务放款",
-      "assignee": "${finance}"
+      "candidateGroups": "role_finance"
     },
     {
       "id": "EndEvent_1",

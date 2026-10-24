@@ -46,25 +46,25 @@
       "id": "Task_Overseas",
       "type": "userTask",
       "name": "合规审核",
-      "assignee": "${legal}"
+      "candidateGroups": "role_legal"
     },
     {
       "id": "Task_Qualify",
       "type": "userTask",
       "name": "资质审核",
-      "assignee": "${qualify}"
+      "candidateGroups": "role_qualify"
     },
     {
       "id": "Task_Purchase",
       "type": "userTask",
       "name": "采购部审批",
-      "assignee": "${purchase}"
+      "candidateGroups": "role_purchase"
     },
     {
       "id": "Task_Finance",
       "type": "userTask",
       "name": "财务备案",
-      "assignee": "${finance}"
+      "candidateGroups": "role_finance"
     },
     {
       "id": "EndEvent_1",

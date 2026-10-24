@@ -46,19 +46,19 @@
       "id": "Task_External",
       "type": "userTask",
       "name": "HR 总监审批",
-      "assignee": "${hr}"
+      "candidateGroups": "role_hr"
     },
     {
       "id": "Task_Leader",
       "type": "userTask",
       "name": "主管审批",
-      "assignee": "${manager}"
+      "candidateGroups": "role_manager"
     },
     {
       "id": "Task_Hr",
       "type": "userTask",
       "name": "HR 审批",
-      "assignee": "${hr}"
+      "candidateGroups": "role_hr"
     },
     {
       "id": "EndEvent_1",

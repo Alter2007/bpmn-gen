@@ -46,19 +46,19 @@
       "id": "Task_ReportUp",
       "type": "userTask",
       "name": "上报审核",
-      "assignee": "${leader}"
+      "candidateGroups": "role_leader"
     },
     {
       "id": "Task_Director",
       "type": "userTask",
       "name": "分管领导审批",
-      "assignee": "${director}"
+      "candidateGroups": "role_director"
     },
     {
       "id": "Task_Gm",
       "type": "userTask",
       "name": "主要领导批准",
-      "assignee": "${gm}"
+      "candidateGroups": "role_gm"
     },
     {
       "id": "EndEvent_1",

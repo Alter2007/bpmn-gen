@@ -40,13 +40,13 @@
       "id": "Task_Leader",
       "type": "userTask",
       "name": "直属主管审批",
-      "assignee": "${manager}"
+      "candidateGroups": "role_manager"
     },
     {
       "id": "Task_Hr",
       "type": "userTask",
       "name": "HR 审批",
-      "assignee": "${hr}"
+      "candidateGroups": "role_hr"
     },
     {
       "id": "Gateway_Confidential",
@@ -57,13 +57,13 @@
       "id": "Task_Security",
       "type": "userTask",
       "name": "安全审查",
-      "assignee": "${security}"
+      "candidateGroups": "role_security"
     },
     {
       "id": "Task_Handover",
       "type": "userTask",
       "name": "工作交接确认",
-      "assignee": "${manager}"
+      "candidateGroups": "role_manager"
     },
     {
       "id": "EndEvent_1",

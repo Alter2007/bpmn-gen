@@ -45,19 +45,19 @@
       "id": "Task_Abnormal",
       "type": "userTask",
       "name": "税务专员复核",
-      "assignee": "${finance}"
+      "candidateGroups": "role_finance"
     },
     {
       "id": "Task_Check",
       "type": "userTask",
       "name": "财务查验",
-      "assignee": "${finance}"
+      "candidateGroups": "role_finance"
     },
     {
       "id": "Task_Book",
       "type": "userTask",
       "name": "登记入账",
-      "assignee": "${accountant}"
+      "candidateGroups": "role_accountant"
     },
     {
       "id": "EndEvent_1",

@@ -47,25 +47,25 @@
       "id": "Task_Urgent",
       "type": "userTask",
       "name": "主要领导签发",
-      "assignee": "${leader}"
+      "candidateGroups": "role_leader"
     },
     {
       "id": "Task_Review",
       "type": "userTask",
       "name": "核稿",
-      "assignee": "${reviewer}"
+      "candidateGroups": "role_reviewer"
     },
     {
       "id": "Task_Cosign",
       "type": "userTask",
       "name": "会签",
-      "assignee": "${cosign}"
+      "candidateGroups": "role_cosign"
     },
     {
       "id": "Task_Sign",
       "type": "userTask",
       "name": "签发",
-      "assignee": "${leader}"
+      "candidateGroups": "role_leader"
     },
     {
       "id": "EndEvent_1",

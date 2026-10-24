@@ -45,19 +45,19 @@
       "id": "Task_CrossYear",
       "type": "userTask",
       "name": "财务总监审批",
-      "assignee": "${financeDirector}"
+      "candidateGroups": "role_financeDirector"
     },
     {
       "id": "Task_Finance",
       "type": "userTask",
       "name": "财务审核",
-      "assignee": "${finance}"
+      "candidateGroups": "role_finance"
     },
     {
       "id": "Task_Leader",
       "type": "userTask",
       "name": "分管领导审批",
-      "assignee": "${director}"
+      "candidateGroups": "role_director"
     },
     {
       "id": "EndEvent_1",

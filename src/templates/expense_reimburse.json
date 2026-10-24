@@ -51,25 +51,25 @@
       "id": "Task_HasEntertainment",
       "type": "userTask",
       "name": "财务复核",
-      "assignee": "${finance}"
+      "candidateGroups": "role_finance"
     },
     {
       "id": "Task_Dept",
       "type": "userTask",
       "name": "部门审核",
-      "assignee": "${deptManager}"
+      "candidateGroups": "role_deptManager"
     },
     {
       "id": "Task_Finance",
       "type": "userTask",
       "name": "财务审核",
-      "assignee": "${finance}"
+      "candidateGroups": "role_finance"
     },
     {
       "id": "Task_Archive",
       "type": "userTask",
       "name": "归档入账",
-      "assignee": "${finance}"
+      "candidateGroups": "role_finance"
     },
     {
       "id": "EndEvent_1",
