@@ -238,7 +238,39 @@
         <div class="help-main">
           <div id="help-pages">
 
-            <article class="help-page active" data-title="快速开始">
+            <article class="help-page active" data-title="这是什么">
+              <h2>这个程序是干什么的</h2>
+              <p class="help-lead">把一句中文描述的审批规则，变成引擎能<b>直接部署</b>的 BPMN 流程文件。</p>
+
+              <h3>它能做三件事</h3>
+              <ul class="help-ul">
+                <li><b>听懂人话</b>：你写「差旅报销，金额小于1000主管批，超过5000财务复核」，它生成对应流程；</li>
+                <li><b>产出能跑的文件</b>：导出标准 BPMN 2.0，导入 Flowable / Camunda 即可部署；</li>
+                <li><b>顺带给出配套件</b>：流程说明书、表单定义、分支测试用例。</li>
+              </ul>
+
+              <h3>适合谁用</h3>
+              <table class="help-table">
+                <tr><th>你是谁</th><th>用它做什么</th></tr>
+                <tr><td><b>业务人员</b>（财务 / 行政 / 人事）</td><td>自己把要的流程说出来，不用排期等 IT 开发</td></tr>
+                <tr><td><b>流程实施 / 信息化顾问</b></td><td>现场几分钟出原型，当场跟客户对需求</td></tr>
+                <tr><td><b>开发同学</b></td><td>拿到一份合法可跑的 BPMN 基线，不用从白纸开始画</td></tr>
+              </table>
+
+              <h3>核心目的</h3>
+              <p>消灭业务与 IT 之间的<b>翻译成本</b>。原来一句话的规则要走「提需求 → 排期 → 开发 → 确认」好几轮（以周计），现在几秒钟就能拿到可运行的流程。</p>
+
+              <h3>现在做不到什么（先说实话）</h3>
+              <ul class="help-ul">
+                <li>只支持「单变量分级」和「是/否」条件，<b>多条件组合</b>（如"部门=采购 且 金额&gt;5000"）还表达不了；</li>
+                <li>审批人是占位符（主管 / 总监），<b>没有对接真实组织架构</b>；</li>
+                <li>它是<b>生成器</b>，不是流程平台：不做账号、待办、审批历史，这些交给引擎和应用系统。</li>
+              </ul>
+
+              <div class="help-tip">默认全部在本机运行，你的描述不会离开电脑；只有选「自然语言生成」模式时才会把这句话发给大模型。</div>
+            </article>
+
+            <article class="help-page" data-title="快速开始">
               <h2>快速开始（三步）</h2>
               <ol class="help-ol">
                 <li>左侧点「生成」，在输入框里用一句中文描述审批场景；</li>
@@ -423,7 +455,7 @@
 
           <div class="help-pager">
             <button class="btn btn-ghost" id="help-prev">← 上一页</button>
-            <span class="help-num" id="help-num">1 / 13</span>
+            <span class="help-num" id="help-num">1 / 14</span>
             <button class="btn btn-ghost" id="help-next">下一页 →</button>
           </div>
         </div>
