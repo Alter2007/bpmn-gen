@@ -26,6 +26,7 @@ const { loadTemplates, listTemplates, generateFromText, buildFromTemplate } = re
 const { buildSystemPrompt, buildUserMessage, parseModelOutput } = require('../src/prompt');
 const { runPipeline } = require('../src/pipeline');
 const { callChat, resolveConfig } = require('../src/llm');
+const { buildArtifacts } = require('../src/artifacts');
 
 const PORT = Number(process.argv[2] || 8099);
 const HOST = '127.0.0.1';
@@ -319,18 +320,29 @@ function finishGenerate(body, meta, result, started, templateId) {
   const fileName = templateId + '-' + stamp() + '.bpmn';
   fs.writeFileSync(path.join(OUT, fileName), result.xml, 'utf8');
 
+  // 配套产物：表单定义 / 文字说明 / 分支用例
+  const tpl = loadTemplates().find((t) => t.templateId === templateId) || null;
+  let artifacts = null;
+  try {
+    artifacts = buildArtifacts(result.ir, tpl);
+  } catch (e) {
+    console.log('[产物] 生成失败（不影响主流程）: ' + (e && e.message));
+  }
+
   return {
     code: 200,
     payload: {
       ok: true,
       file: fileName,
       xml: result.xml,
+      artifacts: artifacts,
       meta: Object.assign({}, meta, {
         nodes: result.ir.nodes.length,
         flows: result.ir.flows.length,
         bytes: Buffer.byteLength(result.xml, 'utf8'),
         ms: Date.now() - started,
-        name: result.ir.name
+        name: result.ir.name,
+        cases: artifacts ? artifacts.cases.total : 0
       })
     }
   };

@@ -389,6 +389,7 @@ function main() {
   runRepairUnit();
   runNlCases();
   runPromptUnit();
+  runArtifactsUnit();
   runScriptHygiene();
 
   console.log('');
@@ -404,4 +405,37 @@ function main() {
   process.exit(0);
 }
 
+// ---------------- 配套产物（表单 / 说明 / 分支用例） ----------------
+function runArtifactsUnit() {
+  console.log('');
+  console.log('== 配套产物：表单 / 说明 / 分支用例 ==');
+
+  const { buildArtifacts, sampleValueFor } = require('../src/artifacts');
+  const { generateFromText } = require('../src/nl');
+
+  const g = generateFromText('差旅报销，金额小于1000主管批，超过5000财务复核');
+  check('产物：能按文本生成 IR', g.ok === true, g.error || '');
+  const a = buildArtifacts(g.ir, g.template || null);
+
+  const ids = a.form.fields.map((f) => f.id);
+  check('产物：表单字段用渲染后的变量名', ids.indexOf('amount') >= 0, ids.join(','));
+  check('产物：表单必含 approved 决策字段', ids.indexOf('approved') >= 0, ids.join(','));
+  check('产物：表单无未替换占位符', ids.join(',').indexOf('@') === -1, ids.join(','));
+
+  check('产物：说明含节点清单', a.doc.markdown.indexOf('## 节点') >= 0);
+  check('产物：说明含分支条件表', a.doc.markdown.indexOf('## 分支与条件') >= 0);
+  check('产物：说明含驳回路径段', a.doc.markdown.indexOf('## 驳回 / 退回路径') >= 0);
+
+  check('产物：分支用例数正确', a.cases.total === 4, String(a.cases.total));
+  const vals = a.cases.cases.map((c) => JSON.stringify(c.variables)).join(' ');
+  check('产物：第一档样例满足 <=1000', vals.indexOf('"amount":999') >= 0, vals);
+  check('产物：中间档样例满足区间', vals.indexOf('"amount":1001') >= 0, vals);
+  check('产物：默认档样例超过最大阈值', vals.indexOf('"amount":5001') >= 0, vals);
+  check('产物：驳回样例带 approved=false', vals.indexOf('"approved":false') >= 0, vals);
+
+  const s1 = sampleValueFor('${amount <= 1000}');
+  check('产物：上界条件取阈值-1', s1 && s1.value === 999, JSON.stringify(s1));
+  const s2 = sampleValueFor("${execution.getVariable('approved') == false}");
+  check('产物：布尔条件取 false', s2 && s2.value === false, JSON.stringify(s2));
+}
 main();

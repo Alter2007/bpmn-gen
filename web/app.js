@@ -33,6 +33,8 @@
     clarify: $('clarify'),
     clarifyQ: $('clarify-q'),
     clarifyOpts: $('clarify-opts'),
+    btnDoc: $('btn-doc'),
+    btnForm: $('btn-form'),
     sideModel: $('side-model'),
     sideProvider: $('side-provider'),
     sideDot: $('side-dot'),
@@ -276,8 +278,11 @@
       }
       state.xml = res.xml;
       state.file = res.file;
+      state.artifacts = res.artifacts || null;
       els.btnCopy.disabled = false;
       els.btnDownload.disabled = false;
+      if (els.btnDoc) els.btnDoc.disabled = !state.artifacts;
+      if (els.btnForm) els.btnForm.disabled = !state.artifacts;
 
       var m = res.meta || {};
       var bits = [];
@@ -287,6 +292,7 @@
       bits.push('<b>' + (m.bytes / 1024).toFixed(1) + ' KB</b>');
       bits.push('耗时 <b>' + m.ms + ' ms</b>');
       if (m.tokens) bits.push('token <b>' + m.tokens.in + '/' + m.tokens.out + '</b>');
+      if (m.cases) bits.push('覆盖用例 <b>' + m.cases + '</b> 条');
       els.meta.innerHTML = bits.join('　·　');
 
       return renderXml(res.xml).then(function () {
@@ -412,6 +418,36 @@
       els.sideDot.className = 'usage-dot';
     });
   }, 5000);
+
+  // 配套产物下载：流程说明（.md）/ 表单定义（.json）
+  function downloadText(text, name, type) {
+    var blob = new Blob([text], { type: type });
+    var a = document.createElement('a');
+    a.href = URL.createObjectURL(blob);
+    a.download = name;
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    setTimeout(function () { URL.revokeObjectURL(a.href); }, 1500);
+  }
+
+  if (els.btnDoc) {
+    els.btnDoc.addEventListener('click', function () {
+      if (!state.artifacts) return;
+      var base = (state.file || 'process.bpmn').replace(/\.bpmn$/i, '');
+      downloadText(state.artifacts.doc.markdown, base + '-说明.md', 'text/markdown;charset=utf-8');
+      toast('已下载流程说明（含分支条件与驳回路径）');
+    });
+  }
+
+  if (els.btnForm) {
+    els.btnForm.addEventListener('click', function () {
+      if (!state.artifacts) return;
+      var base = (state.file || 'process.bpmn').replace(/\.bpmn$/i, '');
+      downloadText(JSON.stringify(state.artifacts.form, null, 2), base + '-表单.json', 'application/json;charset=utf-8');
+      toast('已下载表单定义（' + state.artifacts.form.fields.length + ' 个字段）');
+    });
+  }
 
   // ---------------- 模板库 ----------------
   function loadTemplates() {
