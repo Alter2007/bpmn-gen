@@ -1,0 +1,65 @@
+name: verify
+
+# 每次 push 到 main 或提 PR，都自动跑一遍六层验证。
+# 验证内容与本地 `verify-all.cmd` 完全一致，没有任何"CI 专用"的放宽。
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+  workflow_dispatch:
+
+concurrency:
+  group: verify-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  six-layers:
+    name: 六层验证（Windows）
+    runs-on: windows-latest
+    timeout-minutes: 40
+
+    steps:
+      - name: 检出代码
+        uses: actions/checkout@v4
+
+      - name: 安装 Node 20
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+
+      - name: 安装 JDK 17
+        uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '17'
+
+      # 验证脚本按需下载 Flowable jar 和 OMG XSD 到仓库上一级的 .cache。
+      # 缓存它，避免每次 CI 都重新下 20MB 的 jar。
+      - name: 缓存 Flowable jar 与 XSD
+        uses: actions/cache@v4
+        with:
+          path: ${{ github.workspace }}\..\.cache
+          key: ${{ runner.os }}-bpmn-${{ hashFiles('scripts/fetch-flowable.js', 'scripts/fetch-flowable-engine.js', 'scripts/fetch-schema.js') }}
+          restore-keys: |
+            ${{ runner.os }}-bpmn-
+
+      - name: 环境自检
+        shell: pwsh
+        run: |
+          node --version
+          java -version 2>&1 | Select-Object -First 3
+          Write-Host "工作目录: $PWD"
+
+      - name: 六层验证
+        shell: cmd
+        run: verify-all.cmd
+
+      - name: 失败时上传生成物
+        if: failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: generated-bpmn
+          path: ${{ github.workspace }}\..\.data\out\*.bpmn
+          if-no-files-found: ignore
+          retention-days: 7

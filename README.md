@@ -1,5 +1,7 @@
 # bpmn-gen：自然语言 → BPMN 2.0（Flowable）审批流生成器
 
+[![verify](https://github.com/Alter2007/bpmn-gen/actions/workflows/verify.yml/badge.svg)](https://github.com/Alter2007/bpmn-gen/actions/workflows/verify.yml)
+
 **当前阶段：S0 契约 + S1 内核 + S2 修复 + S3 自然语言/大模型 + L2 官方 XSD 校验 + L4 实例运行（核心零依赖，无需 `npm install`）**
 
 **演示视频**：[B 站 · BV1FvHA6YEyP](https://www.bilibili.com/video/BV1FvHA6YEyP/) —— P1 大模型版（2:14）/ P2 离线模式（2:38）
