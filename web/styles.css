@@ -228,3 +228,56 @@ code {
 }
 .toast.show { opacity: 1; transform: translateY(0); }
 .toast.err { background: #a8071a; }
+
+/* ===== 设置页：API Key 卡片 ===== */
+.key-card {
+  border: 1px solid var(--line);
+  border-radius: var(--radius);
+  padding: 18px 20px;
+  background: var(--field);
+  margin-bottom: 18px;
+}
+.key-head {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 16px;
+  margin-bottom: 14px;
+}
+.key-title { font-size: 15px; font-weight: 600; color: var(--text); }
+.key-sub { font-size: 12.5px; color: var(--text-3); margin-top: 4px; line-height: 1.6; }
+.key-status {
+  flex: none;
+  font-size: 12px;
+  padding: 4px 10px;
+  border-radius: 20px;
+  background: #fff;
+  border: 1px solid var(--line);
+  color: var(--text-3);
+  white-space: nowrap;
+}
+.key-status.on { color: var(--ok); border-color: rgba(0, 180, 42, .3); background: rgba(0, 180, 42, .06); }
+.key-row { display: flex; gap: 10px; }
+.key-row .text-input {
+  flex: 1;
+  height: 46px;
+  padding: 0 14px;
+  border-radius: 9px;
+  border: 1px solid var(--line);
+  background: #fff;
+  font-size: 13.5px;
+  font-family: inherit;
+  color: var(--text);
+}
+.key-row .text-input:focus { outline: none; border-color: var(--text-3); }
+.key-hint { margin-top: 12px; font-size: 12.5px; color: var(--text-3); line-height: 1.7; }
+
+.quit-row {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  margin-top: 18px;
+  padding-top: 16px;
+  border-top: 1px solid var(--line-soft);
+}
+.quit-hint { font-size: 12.5px; color: var(--text-3); }

@@ -34,6 +34,20 @@ const OUT = path.join(__dirname, '..', '..', '.data', 'out');
 const DIST = path.join(__dirname, 'node_modules', 'bpmn-js', 'dist');
 const MAX_BODY = 256 * 1024;
 
+// 运行时密钥：只存在于本进程内存，绝不写盘、不写日志（P-05）
+// 来源优先级：界面设置的内存值 > 环境变量
+let runtimeKey = '';
+
+function currentConfig() {
+  return resolveConfig(runtimeKey ? { apiKey: runtimeKey } : {});
+}
+
+function maskKey(k) {
+  if (!k) return '';
+  if (k.length <= 8) return '****';
+  return k.slice(0, 5) + '…' + k.slice(-4);
+}
+
 const MIME = {
   '.html': 'text/html; charset=utf-8',
   '.js': 'text/javascript; charset=utf-8',
@@ -113,7 +127,7 @@ async function handleGenerate(body) {
   if (text === '') return { code: 400, payload: { ok: false, error: '请先输入业务描述' } };
 
   const templates = loadTemplates();
-  const cfg = resolveConfig({});
+  const cfg = currentConfig();
   const wantOffline = body.mode === 'offline' || !cfg.hasKey;
 
   const meta = {
@@ -208,7 +222,7 @@ async function handleRequest(req, res) {
 
   // ---------- API ----------
   if (p === '/api/health') {
-    const cfg = resolveConfig({});
+    const cfg = currentConfig();
     sendJson(res, 200, {
       ok: true,
       provider: cfg.providerName,
@@ -239,6 +253,71 @@ async function handleRequest(req, res) {
     const target = path.resolve(OUT, name);
     if (!target.startsWith(path.resolve(OUT) + path.sep)) { sendJson(res, 400, { ok: false, error: 'bad path' }); return; }
     serveFile(res, target);
+    return;
+  }
+
+  if (p === '/api/key') {
+    const cfg = currentConfig();
+
+    if (req.method === 'GET') {
+      const fromEnv = !runtimeKey && cfg.hasKey;
+      const raw = runtimeKey || (fromEnv ? process.env[cfg.keyEnv] || '' : '');
+      sendJson(res, 200, {
+        ok: true,
+        hasKey: cfg.hasKey,
+        source: runtimeKey ? 'memory' : (fromEnv ? 'env' : 'none'),
+        masked: cfg.hasKey ? maskKey(raw) : '',
+        provider: cfg.providerName,
+        model: cfg.model
+      });
+      return;
+    }
+
+    if (req.method === 'POST') {
+      let body;
+      try {
+        body = JSON.parse((await readBody(req)) || '{}');
+      } catch (e) {
+        sendJson(res, 400, { ok: false, error: '请求体不是合法 JSON' });
+        return;
+      }
+      const key = String(body.key || '').trim();
+      if (key === '') { sendJson(res, 400, { ok: false, error: '密钥不能为空' }); return; }
+      if (key.length < 16) { sendJson(res, 400, { ok: false, error: '密钥看起来太短，请确认是否粘贴完整' }); return; }
+
+      runtimeKey = key;
+      const c2 = currentConfig();
+      // 只打印长度，不打印内容
+      console.log('[密钥] 界面中已设置（仅内存，长度 ' + key.length + '），不写盘');
+      sendJson(res, 200, {
+        ok: true,
+        hasKey: true,
+        source: 'memory',
+        masked: maskKey(key),
+        model: c2.model,
+        warning: /^sk-/.test(key) ? '' : '提示：DeepSeek 密钥通常以 sk- 开头，请确认没有粘错'
+      });
+      return;
+    }
+
+    if (req.method === 'DELETE') {
+      runtimeKey = '';
+      console.log('[密钥] 已从内存清除');
+      sendJson(res, 200, { ok: true, hasKey: false, source: 'none' });
+      return;
+    }
+
+    sendJson(res, 405, { ok: false, error: '只支持 GET / POST / DELETE' });
+    return;
+  }
+
+  if (p === '/api/shutdown') {
+    if (req.method !== 'POST') { sendJson(res, 405, { ok: false, error: '请用 POST' }); return; }
+    sendJson(res, 200, { ok: true, message: '服务即将退出' });
+    setTimeout(() => {
+      console.log('[退出] 收到界面请求，进程结束');
+      process.exit(0);
+    }, 200);
     return;
   }
 
@@ -297,13 +376,13 @@ server.on('clientError', (err, socket) => {
 });
 
 server.listen(PORT, HOST, () => {
-  const cfg = resolveConfig({});
+  const cfg = currentConfig();
   ensureOut();
   console.log('');
   console.log('=== BPMN 生成器 · 本地应用 ===');
   console.log('  地址  : http://' + HOST + ':' + PORT);
   console.log('  数据  : ' + OUT);
-  console.log('  模型  : ' + cfg.providerName + ' / ' + cfg.model + '（Key ' + (cfg.hasKey ? '已就绪' : '未设置，将只用离线模板') + '）');
+  console.log('  模型  : ' + cfg.providerName + ' / ' + cfg.model + '（Key ' + (cfg.hasKey ? '已就绪' : '未设置 —— 可在网页「设置」里粘贴，或只用离线模板') + '）');
   console.log('  模板  : ' + loadTemplates().length + ' 个');
   console.log('  说明  : 前台进程，Ctrl+C 结束；不注册服务、不建数据库');
   console.log('');

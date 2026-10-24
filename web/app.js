@@ -24,6 +24,12 @@
     countTemplates: $('count-templates'),
     tableTemplates: $('table-templates'),
     kvSettings: $('kv-settings'),
+    apiKey: $('api-key'),
+    keyStatus: $('key-status'),
+    keyHint: $('key-hint'),
+    btnSaveKey: $('btn-save-key'),
+    btnClearKey: $('btn-clear-key'),
+    btnQuit: $('btn-quit'),
     sideModel: $('side-model'),
     sideProvider: $('side-provider'),
     sideDot: $('side-dot'),
@@ -98,28 +104,45 @@
   });
 
   // ---------------- 健康状态 ----------------
+  function renderKey(k, h) {
+    var has = !!(k && k.hasKey);
+    els.keyStatus.textContent = has ? '已设置' : '未设置';
+    els.keyStatus.className = 'key-status' + (has ? ' on' : '');
+    if (has) {
+      var src = k.source === 'env' ? '来自环境变量' : '仅在本应用内存';
+      els.keyHint.textContent = '当前密钥：' + k.masked + '（' + src + '）· 模型 ' +
+        (k.model || h.model) + ' · 关掉应用即失效';
+    } else {
+      els.keyHint.textContent = '未设置密钥时，只能使用「仅用模板（不联网）」模式。';
+    }
+  }
+
   function loadHealth() {
-    return api('/api/health').then(function (h) {
+    return Promise.all([api('/api/health'), api('/api/key')]).then(function (r) {
+      var h = r[0];
+      var k = r[1];
       els.sideModel.textContent = h.model || '未配置模型';
       els.sideProvider.textContent = h.provider + (h.hasKey ? ' · 已就绪' : ' · 无密钥(仅模板)');
       els.sideDot.className = 'usage-dot' + (h.hasKey ? ' on' : '');
+      renderKey(k, h);
 
       var rows = [
         ['供应商', h.provider + '（' + h.providerId + '）'],
         ['模型', h.model],
         ['接口地址', h.baseUrl],
-        ['密钥状态', h.hasKey ? '已从环境变量读取（不落盘）' : '未设置 —— 将只能使用离线模板'],
-        ['密钥变量名', h.keyEnv],
+        ['密钥状态', h.hasKey ? ('已设置 ' + (k.masked || '') + '（' + (k.source === 'env' ? '环境变量' : '内存') + '）') : '未设置 —— 只能使用离线模板'],
         ['模板数量', String(h.templates)],
         ['已生成流程', String(h.flows)]
       ];
-      els.kvSettings.innerHTML = rows.map(function (r) {
-        return '<div class="k">' + r[0] + '</div><div class="v">' + esc(r[1]) + '</div>';
+      els.kvSettings.innerHTML = rows.map(function (row) {
+        return '<div class="k">' + row[0] + '</div><div class="v">' + esc(row[1]) + '</div>';
       }).join('');
       return h;
     }).catch(function () {
       els.sideModel.textContent = '服务未连接';
-      els.sideProvider.textContent = '请检查黑窗口是否在运行';
+      els.sideProvider.textContent = '请重新打开应用';
+      els.keyStatus.textContent = '未知';
+      els.keyStatus.className = 'key-status';
     });
   }
 
@@ -280,6 +303,46 @@
     } else {
       toast('当前浏览器不支持剪贴板 API', true);
     }
+  });
+
+  // ---------------- 密钥设置 / 退出 ----------------
+  els.btnSaveKey.addEventListener('click', function () {
+    var v = els.apiKey.value.trim();
+    if (!v) { toast('请先粘贴密钥', true); els.apiKey.focus(); return; }
+    els.btnSaveKey.disabled = true;
+    api('/api/key', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ key: v })
+    }).then(function (res) {
+      els.apiKey.value = '';
+      toast(res.warning || ('密钥已保存：' + res.masked + '（仅存于内存）'));
+      return loadHealth();
+    }).catch(function (e) {
+      toast('保存失败：' + e.message, true);
+    }).then(function () {
+      els.btnSaveKey.disabled = false;
+    });
+  });
+
+  els.btnClearKey.addEventListener('click', function () {
+    api('/api/key', { method: 'DELETE' }).then(function () {
+      toast('密钥已清除，将退回离线模板模式');
+      return loadHealth();
+    }).catch(function (e) {
+      toast('清除失败：' + e.message, true);
+    });
+  });
+
+  els.btnQuit.addEventListener('click', function () {
+    api('/api/shutdown', { method: 'POST' }).then(function () {
+      toast('应用已退出，可以直接关闭窗口');
+      els.sideModel.textContent = '已退出';
+      els.sideProvider.textContent = '重新双击图标可再次启动';
+      els.sideDot.className = 'usage-dot';
+    }).catch(function () {
+      toast('退出请求失败', true);
+    });
   });
 
   // ---------------- 模板库 ----------------

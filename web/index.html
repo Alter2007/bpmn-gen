@@ -149,7 +149,7 @@
     <section class="view" id="view-verify">
       <div class="page-head">
         <h1>验证报告</h1>
-        <p>五层校验结果，可用 <code>verify-all.cmd</code> 一条命令复现</p>
+        <p>六层校验结果，可用 <code>verify-all.cmd</code> 一条命令复现</p>
       </div>
       <div class="panel">
         <div class="table-wrap">
@@ -159,14 +159,15 @@
               <tr><td>L1 良构</td><td>标签配对、根元素唯一、CDATA 完整</td><td>自研 xml-lint</td><td><span class="ok">通过</span></td></tr>
               <tr><td>L0 契约</td><td>字段类型、id 唯一、自环、默认流唯一</td><td>src/ir.js</td><td><span class="ok">通过</span></td></tr>
               <tr><td>L3 图论</td><td>起止唯一、悬挂节点、不可达、死路、网关默认流</td><td>src/graph.js</td><td><span class="ok">通过</span></td></tr>
-              <tr><td>L2 规范</td><td>是否符合 BPMN 2.0 官方 schema</td><td>OMG XSD + JDK 17</td><td><span class="ok">16 / 16</span></td></tr>
-              <tr><td>L2b 模型</td><td>模型能否被标准库建出来</td><td>第三方 bpmn-moddle</td><td><span class="ok">16 / 16</span></td></tr>
-              <tr><td>L4-lite</td><td>引擎能否解析并通过流程校验</td><td>Flowable 7.2.0</td><td><span class="ok">16 / 16</span></td></tr>
+              <tr><td>L2 规范</td><td>是否符合 BPMN 2.0 官方 schema</td><td>OMG XSD + JDK 17</td><td><span class="ok">27 / 27</span></td></tr>
+              <tr><td>L2b 模型</td><td>模型能否被标准库建出来</td><td>第三方 bpmn-moddle</td><td><span class="ok">27 / 27</span></td></tr>
+              <tr><td>L4-lite</td><td>引擎能否解析并通过流程校验</td><td>Flowable 7.2.0</td><td><span class="ok">27 / 27</span></td></tr>
+              <tr><td>L4 实例</td><td>真实部署 + 启动实例 + 路径断言</td><td>Flowable + H2</td><td><span class="ok">6 / 6</span></td></tr>
               <tr><td>端到端</td><td>大模型真实调用 8 条业务描述</td><td>run-llm-tests.cmd</td><td><span class="ok">8 / 8</span></td></tr>
             </tbody>
           </table>
         </div>
-        <p class="note">说明：L4-lite 证明「引擎接受这份流程定义」，尚未做真实实例运行；按项目诚实原则，不作超出证据的声明。</p>
+        <p class="note">L4-lite 证明「引擎接受这份流程定义」；L4 实例运行证明「流程真的能跑完并走对分支」——同一份文件、不同金额走不同审批人，路径断言已通过。</p>
       </div>
     </section>
 
@@ -174,10 +175,33 @@
     <section class="view" id="view-settings">
       <div class="page-head">
         <h1>设置</h1>
-        <p>运行状态与模型接入信息（密钥只从环境变量读取，不落盘）</p>
+        <p>在这里粘贴 DeepSeek API Key —— 无需命令行，无需重启</p>
       </div>
+
       <div class="panel">
+        <div class="key-card">
+          <div class="key-head">
+            <div>
+              <div class="key-title">DeepSeek API Key</div>
+              <div class="key-sub">只保存在本应用的内存里，关掉应用即失效；不会写入任何文件或日志</div>
+            </div>
+            <span class="key-status" id="key-status">未设置</span>
+          </div>
+          <div class="key-row">
+            <input id="api-key" class="text-input" type="password" autocomplete="off" spellcheck="false"
+                   placeholder="粘贴以 sk- 开头的密钥…" />
+            <button class="btn btn-primary" id="btn-save-key">保存</button>
+            <button class="btn btn-ghost" id="btn-clear-key">清除</button>
+          </div>
+          <div class="key-hint" id="key-hint">未设置密钥时，只能使用「仅用模板（不联网）」模式。</div>
+        </div>
+
         <div class="kv" id="kv-settings"></div>
+
+        <div class="quit-row">
+          <button class="btn btn-ghost" id="btn-quit">退出应用</button>
+          <span class="quit-hint">退出后本地服务停止，可直接关闭窗口</span>
+        </div>
       </div>
     </section>
 
