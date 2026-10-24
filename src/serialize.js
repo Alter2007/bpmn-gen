@@ -119,7 +119,10 @@ function serialize(ir, opts) {
       if (n.expression) attrs.push('flowable:expression="' + escAttr(n.expression) + '"');
       if (n.delegateExpression) attrs.push('flowable:delegateExpression="' + escAttr(n.delegateExpression) + '"');
     }
-    if (isGateway(n.type) && defaultFlowBySource.has(n.id)) {
+    // default 属性：网关和"活动"（任务）都合法 —— 活动有多条出向时，
+    // 条件全不满足就默认走 default 那条，这是驳回/退回的标准写法。
+    // 开始/结束事件没有出向语义，不参与。
+    if (n.type !== 'startEvent' && n.type !== 'endEvent' && defaultFlowBySource.has(n.id)) {
       attrs.push('default="' + escAttr(idMap.get(defaultFlowBySource.get(n.id))) + '"');
     }
 

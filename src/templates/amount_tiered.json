@@ -2,7 +2,7 @@
   "templateId": "amount_tiered",
   "name": "金额分级审批",
   "description": "按金额区间分级审批：小额一级审批，中额升级审批，大额财务复核",
-  "keywords": ["报销", "差旅", "金额", "费用", "分级", "超过", "小于", "大于", "超过", "预算", "标准"],
+  "keywords": ["报销", "差旅", "金额", "费用", "分级", "标准", "超过", "小于", "大于"],
   "slotOrder": ["tier1", "tier2"],
   "slots": [
     { "name": "subject", "type": "string", "default": "报销", "label": "业务对象" },
@@ -28,8 +28,11 @@
     { "id": "Flow_3", "from": "Gateway_1", "to": "Task_Level1", "name": "≤@tier1@", "condition": "${@varName@ <= @tier1@}" },
     { "id": "Flow_4", "from": "Gateway_1", "to": "Task_Level2", "name": "@tier1@~@tier2@", "condition": "${@varName@ > @tier1@ && @varName@ <= @tier2@}" },
     { "id": "Flow_5", "from": "Gateway_1", "to": "Task_Finance", "name": ">@tier2@", "default": true },
-    { "id": "Flow_6", "from": "Task_Level1", "to": "EndEvent_1" },
-    { "id": "Flow_7", "from": "Task_Level2", "to": "EndEvent_1" },
-    { "id": "Flow_8", "from": "Task_Finance", "to": "EndEvent_1" }
+    { "id": "Flow_6", "from": "Task_Level1", "to": "EndEvent_1", "default": true },
+    { "id": "Flow_7", "from": "Task_Level2", "to": "EndEvent_1", "default": true },
+    { "id": "Flow_8", "from": "Task_Finance", "to": "EndEvent_1", "default": true },
+    { "id": "Flow_9", "from": "Task_Level1", "to": "Task_Submit", "name": "驳回", "condition": "${execution.getVariable('approved') == false}" },
+    { "id": "Flow_10", "from": "Task_Level2", "to": "Task_Submit", "name": "驳回", "condition": "${execution.getVariable('approved') == false}" },
+    { "id": "Flow_11", "from": "Task_Finance", "to": "Task_Submit", "name": "驳回", "condition": "${execution.getVariable('approved') == false}" }
   ]
 }

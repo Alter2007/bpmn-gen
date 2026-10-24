@@ -30,6 +30,11 @@
     btnSaveKey: $('btn-save-key'),
     btnClearKey: $('btn-clear-key'),
     btnQuit: $('btn-quit'),
+    clarify: $('clarify'),
+    clarifyQ: $('clarify-q'),
+    clarifyOpts: $('clarify-opts'),
+    btnDoc: $('btn-doc'),
+    btnForm: $('btn-form'),
     sideModel: $('side-model'),
     sideProvider: $('side-provider'),
     sideDot: $('side-dot'),
@@ -225,13 +230,39 @@
   }
 
   // ---------------- 生成 ----------------
-  function generate() {
+  // ---------------- 交互式澄清 ----------------
+  function hideClarify() {
+    if (els.clarify) {
+      els.clarify.hidden = true;
+      els.clarifyOpts.innerHTML = '';
+    }
+  }
+
+  function showClarify(res) {
+    if (!els.clarify) return;
+    els.clarifyQ.textContent = res.question || '请确认是哪一类流程：';
+    els.clarifyOpts.innerHTML = '';
+    (res.candidates || []).forEach(function (c) {
+      var b = document.createElement('button');
+      b.className = 'clarify-opt';
+      b.innerHTML = '<span class="co-name">' + esc(c.name || c.templateId) + '</span>' +
+        '<span class="co-desc">' + esc(c.description || '') + '</span>';
+      b.title = '点击按「' + (c.name || c.templateId) + '」生成';
+      b.addEventListener('click', function () { generate(c.templateId); });
+      els.clarifyOpts.appendChild(b);
+    });
+    els.clarify.hidden = false;
+    toast('不太确定，先确认一下场景');
+  }
+
+  function generate(pick) {
     var text = (els.desc.value || '').trim();
     if (text === '') {
       els.desc.focus();
       toast('请先输入业务描述', true);
       return;
     }
+    hideClarify();
     var oldLabel = els.btnGenerate.textContent;
     els.btnGenerate.disabled = true;
     els.btnGenerate.textContent = state.mode === 'auto' ? '生成中…' : '匹配中…';
@@ -239,12 +270,19 @@
     api('/api/generate', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ text: text, mode: state.mode })
+      body: JSON.stringify({ text: text, mode: state.mode, pickTemplate: pick || '' })
     }).then(function (res) {
+      if (res && res.needClarify) {
+        showClarify(res);
+        return;
+      }
       state.xml = res.xml;
       state.file = res.file;
+      state.artifacts = res.artifacts || null;
       els.btnCopy.disabled = false;
       els.btnDownload.disabled = false;
+      if (els.btnDoc) els.btnDoc.disabled = !state.artifacts;
+      if (els.btnForm) els.btnForm.disabled = !state.artifacts;
 
       var m = res.meta || {};
       var bits = [];
@@ -254,6 +292,7 @@
       bits.push('<b>' + (m.bytes / 1024).toFixed(1) + ' KB</b>');
       bits.push('耗时 <b>' + m.ms + ' ms</b>');
       if (m.tokens) bits.push('token <b>' + m.tokens.in + '/' + m.tokens.out + '</b>');
+      if (m.cases) bits.push('覆盖用例 <b>' + m.cases + '</b> 条');
       els.meta.innerHTML = bits.join('　·　');
 
       return renderXml(res.xml).then(function () {
@@ -379,6 +418,36 @@
       els.sideDot.className = 'usage-dot';
     });
   }, 5000);
+
+  // 配套产物下载：流程说明（.md）/ 表单定义（.json）
+  function downloadText(text, name, type) {
+    var blob = new Blob([text], { type: type });
+    var a = document.createElement('a');
+    a.href = URL.createObjectURL(blob);
+    a.download = name;
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    setTimeout(function () { URL.revokeObjectURL(a.href); }, 1500);
+  }
+
+  if (els.btnDoc) {
+    els.btnDoc.addEventListener('click', function () {
+      if (!state.artifacts) return;
+      var base = (state.file || 'process.bpmn').replace(/\.bpmn$/i, '');
+      downloadText(state.artifacts.doc.markdown, base + '-说明.md', 'text/markdown;charset=utf-8');
+      toast('已下载流程说明（含分支条件与驳回路径）');
+    });
+  }
+
+  if (els.btnForm) {
+    els.btnForm.addEventListener('click', function () {
+      if (!state.artifacts) return;
+      var base = (state.file || 'process.bpmn').replace(/\.bpmn$/i, '');
+      downloadText(JSON.stringify(state.artifacts.form, null, 2), base + '-表单.json', 'application/json;charset=utf-8');
+      toast('已下载表单定义（' + state.artifacts.form.fields.length + ' 个字段）');
+    });
+  }
 
   // ---------------- 模板库 ----------------
   function loadTemplates() {

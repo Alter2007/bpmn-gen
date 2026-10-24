@@ -1,0 +1,91 @@
+{
+  "templateId": "it_access",
+  "name": "IT 权限申请",
+  "description": "系统权限：主管审批后由 IT 开通账号",
+  "keywords": [
+    "权限",
+    "账号",
+    "开通账号",
+    "系统权限",
+    "IT申请"
+  ],
+  "slotOrder": [],
+  "slots": [],
+  "processId": "itAccess",
+  "processName": "IT 权限申请",
+  "variables": [
+    {
+      "name": "system",
+      "type": "string",
+      "description": "目标系统"
+    }
+  ],
+  "nodes": [
+    {
+      "id": "StartEvent_1",
+      "type": "startEvent",
+      "name": "发起IT 权限申请"
+    },
+    {
+      "id": "Task_Apply",
+      "type": "userTask",
+      "name": "提交权限申请",
+      "assignee": "${initiator}"
+    },
+    {
+      "id": "Task_Leader",
+      "type": "userTask",
+      "name": "主管审批",
+      "assignee": "${manager}"
+    },
+    {
+      "id": "Task_It",
+      "type": "userTask",
+      "name": "IT 开通",
+      "assignee": "${it}"
+    },
+    {
+      "id": "EndEvent_1",
+      "type": "endEvent",
+      "name": "流程结束"
+    }
+  ],
+  "flows": [
+    {
+      "id": "Flow_1",
+      "from": "StartEvent_1",
+      "to": "Task_Apply"
+    },
+    {
+      "id": "Flow_2",
+      "from": "Task_Apply",
+      "to": "Task_Leader"
+    },
+    {
+      "id": "Flow_A1",
+      "from": "Task_Leader",
+      "to": "Task_It",
+      "default": true
+    },
+    {
+      "id": "Flow_End",
+      "from": "Task_It",
+      "to": "EndEvent_1",
+      "default": true
+    },
+    {
+      "id": "Flow_9_R1",
+      "from": "Task_Leader",
+      "to": "Task_Apply",
+      "name": "驳回",
+      "condition": "${execution.getVariable('approved') == false}"
+    },
+    {
+      "id": "Flow_9_R2",
+      "from": "Task_It",
+      "to": "Task_Apply",
+      "name": "驳回",
+      "condition": "${execution.getVariable('approved') == false}"
+    }
+  ]
+}

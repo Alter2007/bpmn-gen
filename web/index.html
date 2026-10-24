@@ -100,6 +100,13 @@
           </div>
         </div>
 
+        <!-- 交互式澄清：模型/匹配不确定时先反问，而不是硬生成 -->
+        <div class="clarify" id="clarify" hidden>
+          <div class="clarify-q" id="clarify-q"></div>
+          <div class="clarify-opts" id="clarify-opts"></div>
+          <div class="clarify-hint">选一个即可；也可以把上面的描述写细一点再点「生成」</div>
+        </div>
+
         <div class="chips" id="chips"></div>
 
         <div class="stage">
@@ -119,6 +126,8 @@
         <div class="actions">
           <div class="meta" id="meta"></div>
           <div class="action-btns">
+            <button class="btn btn-ghost" id="btn-doc" disabled title="下载流程说明（Markdown）">下载说明</button>
+            <button class="btn btn-ghost" id="btn-form" disabled title="下载表单定义（JSON）">下载表单</button>
             <button class="btn btn-ghost" id="btn-copy" disabled>复制 XML</button>
             <button class="btn btn-primary" id="btn-download" disabled>下载 .bpmn</button>
           </div>

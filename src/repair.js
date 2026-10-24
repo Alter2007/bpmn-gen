@@ -129,10 +129,16 @@ function repairIR(input) {
     seenFlowIds.add(id);
     f.id = id;
 
-    // 默认流只能挂在网关的出向上
-    if (f.default === true && !gatewayIds.has(f.from)) {
+    // 默认流可以挂在网关出向，也可以挂在"活动"出向 —— 后者正是驳回/退回的标准写法：
+    // 通过 = 默认流，驳回 = 带条件的另一条。只有开始/结束事件不承担分流。
+    const defaultableIds = new Set(
+      ir.nodes
+        .filter((n) => n && n.id && (isGateway(n.type) || n.type === 'userTask' || n.type === 'serviceTask'))
+        .map((n) => n.id)
+    );
+    if (f.default === true && !defaultableIds.has(f.from)) {
       f.default = false;
-      actions.push('移除非法默认流（源节点不是网关）: ' + f.id);
+      actions.push('移除非法默认流（源节点不承担分流）: ' + f.id);
     }
 
     // 默认流不行带条件（Flowable 会拒绝部署）——保留条件、去掉默认标记，
