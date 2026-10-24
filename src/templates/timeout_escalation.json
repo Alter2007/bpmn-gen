@@ -2,19 +2,53 @@
   "templateId": "timeout_escalation",
   "name": "审批超时升级",
   "description": "超时催办：主管在 N 天内未处理，自动升级到上级处理（边界定时器）",
-  "keywords": ["超时", "催办", "逾期", "升级审批", "超时升级", "多久没批"],
-  "slotOrder": ["timeoutDays"],
+  "keywords": [
+    "超时",
+    "催办",
+    "逾期",
+    "逾时",
+    "超时升级",
+    "升级审批",
+    "多久没批",
+    "几天没批",
+    "没批",
+    "没处理",
+    "未处理",
+    "自动升级",
+    "天没"
+  ],
+  "slotOrder": [
+    "timeoutDays"
+  ],
   "slots": [
-    { "name": "timeoutDays", "type": "number", "default": 3, "label": "超时天数" }
+    {
+      "name": "timeoutDays",
+      "type": "number",
+      "default": 3,
+      "label": "超时天数"
+    }
   ],
   "processId": "timeoutEscalation",
   "processName": "审批超时升级",
   "variables": [
-    { "name": "approved", "type": "boolean", "description": "主管是否通过；false 时退回发起人" }
+    {
+      "name": "approved",
+      "type": "boolean",
+      "description": "主管是否通过；false 时退回发起人"
+    }
   ],
   "nodes": [
-    { "id": "StartEvent_1", "type": "startEvent", "name": "发起申请" },
-    { "id": "Task_Submit", "type": "userTask", "name": "提交申请", "assignee": "${initiator}" },
+    {
+      "id": "StartEvent_1",
+      "type": "startEvent",
+      "name": "发起申请"
+    },
+    {
+      "id": "Task_Submit",
+      "type": "userTask",
+      "name": "提交申请",
+      "assignee": "${initiator}"
+    },
     {
       "id": "Task_Approve",
       "type": "userTask",
@@ -28,17 +62,51 @@
       "name": "超时",
       "attachedTo": "Task_Approve",
       "cancelActivity": true,
-      "timer": { "type": "duration", "value": "P@timeoutDays@D" }
+      "timer": {
+        "type": "duration",
+        "value": "P@timeoutDays@D"
+      }
     },
-    { "id": "Task_Escalate", "type": "userTask", "name": "上级审批", "assignee": "${director}" },
-    { "id": "EndEvent_1", "type": "endEvent", "name": "流程结束" }
+    {
+      "id": "Task_Escalate",
+      "type": "userTask",
+      "name": "上级审批",
+      "assignee": "${director}"
+    },
+    {
+      "id": "EndEvent_1",
+      "type": "endEvent",
+      "name": "流程结束"
+    }
   ],
   "flows": [
-    { "id": "Flow_1", "from": "StartEvent_1", "to": "Task_Submit" },
-    { "id": "Flow_2", "from": "Task_Submit", "to": "Task_Approve" },
-    { "id": "Flow_3", "from": "Task_Approve", "to": "EndEvent_1", "default": true },
-    { "id": "Flow_4", "from": "Boundary_Timeout", "to": "Task_Escalate" },
-    { "id": "Flow_5", "from": "Task_Escalate", "to": "EndEvent_1", "default": true },
+    {
+      "id": "Flow_1",
+      "from": "StartEvent_1",
+      "to": "Task_Submit"
+    },
+    {
+      "id": "Flow_2",
+      "from": "Task_Submit",
+      "to": "Task_Approve"
+    },
+    {
+      "id": "Flow_3",
+      "from": "Task_Approve",
+      "to": "EndEvent_1",
+      "default": true
+    },
+    {
+      "id": "Flow_4",
+      "from": "Boundary_Timeout",
+      "to": "Task_Escalate"
+    },
+    {
+      "id": "Flow_5",
+      "from": "Task_Escalate",
+      "to": "EndEvent_1",
+      "default": true
+    },
     {
       "id": "Flow_6",
       "from": "Task_Approve",

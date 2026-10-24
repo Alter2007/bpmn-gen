@@ -257,5 +257,21 @@
     "expectNames": [
       "或签"
     ]
+  },
+  {
+    "text": "审批超时3天没处理就自动升级",
+    "expectTemplate": "timeout_escalation",
+    "expectNames": [
+      "主管审批",
+      "超时",
+      "上级审批"
+    ]
+  },
+  {
+    "text": "超过两天没批就催办",
+    "expectTemplate": "timeout_escalation",
+    "expectNames": [
+      "上级审批"
+    ]
   }
 ]
