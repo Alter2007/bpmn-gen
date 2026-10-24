@@ -91,21 +91,21 @@
       "from": "Task_Review",
       "to": "Task_Submit",
       "name": "驳回",
-      "condition": "${execution.getVariable('approved') == false}"
+      "condition": "${execution.getVariable('approved') != null && execution.getVariable('approved') == false}"
     },
     {
       "id": "Flow_R2",
       "from": "Task_Cosign",
       "to": "Task_Submit",
       "name": "驳回",
-      "condition": "${execution.getVariable('approved') == false}"
+      "condition": "${execution.getVariable('approved') != null && execution.getVariable('approved') == false}"
     },
     {
       "id": "Flow_R3",
       "from": "Task_Sign",
       "to": "Task_Submit",
       "name": "驳回",
-      "condition": "${execution.getVariable('approved') == false}"
+      "condition": "${execution.getVariable('approved') != null && execution.getVariable('approved') == false}"
     }
   ]
 }

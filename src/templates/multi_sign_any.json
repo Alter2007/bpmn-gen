@@ -77,7 +77,7 @@
       "from": "Task_Sign",
       "to": "Task_Submit",
       "name": "驳回",
-      "condition": "${execution.getVariable('approved') == false}"
+      "condition": "${execution.getVariable('approved') != null && execution.getVariable('approved') == false}"
     }
   ]
 }

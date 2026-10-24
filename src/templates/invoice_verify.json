@@ -77,14 +77,14 @@
       "from": "Task_Check",
       "to": "Task_Submit",
       "name": "驳回",
-      "condition": "${execution.getVariable('approved') == false}"
+      "condition": "${execution.getVariable('approved') != null && execution.getVariable('approved') == false}"
     },
     {
       "id": "Flow_R2",
       "from": "Task_Book",
       "to": "Task_Submit",
       "name": "驳回",
-      "condition": "${execution.getVariable('approved') == false}"
+      "condition": "${execution.getVariable('approved') != null && execution.getVariable('approved') == false}"
     }
   ]
 }

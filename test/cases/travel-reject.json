@@ -24,8 +24,8 @@
     { "id": "Flow_6", "from": "Task_Level1", "to": "EndEvent_1", "default": true },
     { "id": "Flow_7", "from": "Task_Level2", "to": "EndEvent_1", "default": true },
     { "id": "Flow_8", "from": "Task_Finance", "to": "EndEvent_1", "default": true },
-    { "id": "Flow_9", "from": "Task_Level1", "to": "Task_Submit", "name": "驳回", "condition": "${execution.getVariable('approved') == false}" },
-    { "id": "Flow_10", "from": "Task_Level2", "to": "Task_Submit", "name": "驳回", "condition": "${execution.getVariable('approved') == false}" },
-    { "id": "Flow_11", "from": "Task_Finance", "to": "Task_Submit", "name": "驳回", "condition": "${execution.getVariable('approved') == false}" }
+    { "id": "Flow_9", "from": "Task_Level1", "to": "Task_Submit", "name": "驳回", "condition": "${execution.getVariable('approved') != null && execution.getVariable('approved') == false}" },
+    { "id": "Flow_10", "from": "Task_Level2", "to": "Task_Submit", "name": "驳回", "condition": "${execution.getVariable('approved') != null && execution.getVariable('approved') == false}" },
+    { "id": "Flow_11", "from": "Task_Finance", "to": "Task_Submit", "name": "驳回", "condition": "${execution.getVariable('approved') != null && execution.getVariable('approved') == false}" }
   ]
 }

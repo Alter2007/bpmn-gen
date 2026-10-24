@@ -90,21 +90,21 @@
       "from": "Task_Qualify",
       "to": "Task_Apply",
       "name": "驳回",
-      "condition": "${execution.getVariable('approved') == false}"
+      "condition": "${execution.getVariable('approved') != null && execution.getVariable('approved') == false}"
     },
     {
       "id": "Flow_9_R2",
       "from": "Task_Purchase",
       "to": "Task_Apply",
       "name": "驳回",
-      "condition": "${execution.getVariable('approved') == false}"
+      "condition": "${execution.getVariable('approved') != null && execution.getVariable('approved') == false}"
     },
     {
       "id": "Flow_9_R3",
       "from": "Task_Finance",
       "to": "Task_Apply",
       "name": "驳回",
-      "condition": "${execution.getVariable('approved') == false}"
+      "condition": "${execution.getVariable('approved') != null && execution.getVariable('approved') == false}"
     }
   ]
 }

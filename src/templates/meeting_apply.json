@@ -97,14 +97,14 @@
       "from": "Task_Leader",
       "to": "Task_Submit",
       "name": "驳回",
-      "condition": "${execution.getVariable('approved') == false}"
+      "condition": "${execution.getVariable('approved') != null && execution.getVariable('approved') == false}"
     },
     {
       "id": "Flow_8",
       "from": "Task_Chief",
       "to": "Task_Submit",
       "name": "驳回",
-      "condition": "${execution.getVariable('approved') == false}"
+      "condition": "${execution.getVariable('approved') != null && execution.getVariable('approved') == false}"
     }
   ]
 }

@@ -1,13 +1,18 @@
 @echo off
 chcp 65001 >nul
 rem Full verification pipeline (ASCII only in this file).
-rem   1) unit tests   2) XSD cache    3) OMG XSD validation
+rem   1) unit tests   1.5) coverage specs   2) XSD cache   3) OMG XSD validation
 rem   4) Flowable jars   5) Flowable engine parse+validate   6) L4 real instance run
 setlocal enabledelayedexpansion
 cd /d "%~dp0"
 
 echo [1/6] unit tests ...
 node test\run.js
+if errorlevel 1 goto fail
+
+echo.
+echo [1.5/6] generate per-template coverage specs ...
+node scripts\coverage-specs.js
 if errorlevel 1 goto fail
 
 echo.
@@ -58,6 +63,11 @@ java -Dfile.encoding=UTF-8 -Dstdout.encoding=UTF-8 -cp "%RUNJARS%\*" "tools\flow
   "%OUTDIR%\mi-all.bpmn|approvers=u1+u2+u3|expect=Task_Submit>Task_Sign>Task_Sign>Task_Sign" ^
   "%OUTDIR%\mi-all.bpmn|approvers=u1+u2|expect=Task_Submit>Task_Sign>Task_Sign" ^
   "%OUTDIR%\mi-any.bpmn|approvers=u1+u2+u3|expect=Task_Submit>Task_Sign"
+if errorlevel 1 goto fail
+
+echo.
+echo   ---- coverage: every template, every branch ----
+java -Dfile.encoding=UTF-8 -Dstdout.encoding=UTF-8 -cp "%RUNJARS%\*" "tools\flowable-run\FlowableRun.java" "%OUTDIR%\coverage-specs.txt"
 if errorlevel 1 goto fail
 
 echo.

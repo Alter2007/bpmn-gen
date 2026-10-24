@@ -45,7 +45,10 @@ function sampleValueFor(condition, fallback) {
   if (nums.length === 0) return null;
 
   let value;
-  if (/<=\s*-?\d/.test(c) && !/>/.test(c)) {
+  if (/==/.test(c) && !/<=|>=/.test(c)) {
+    // 等值条件（如 level == 1）：直接取那个值本身，不能 +1
+    value = nums[0];
+  } else if (/<=\s*-?\d/.test(c) && !/>/.test(c)) {
     // 只有上界：取比阈值小 1
     value = nums[0] - 1;
   } else if (/>=\s*-?\d/.test(c) && !/</.test(c)) {
@@ -211,8 +214,10 @@ function buildCases(ir) {
       if (sample) seenVars.set(sample.name, true);
       cases.push({
         gateway: gw.name || gw.id,
+        gatewayId: gw.id,
         condition: f.condition || '（默认流）',
         target: (byId.get(f.to) || {}).name || f.to,
+        targetId: f.to,
         variables: sample ? { [sample.name]: sample.value } : {}
       });
     });
@@ -224,8 +229,10 @@ function buildCases(ir) {
   if (back.length > 0) {
     cases.push({
       gateway: '驳回路径',
+      gatewayId: back[0].from,
       condition: back[0].condition || '（驳回）',
       target: (byId.get(back[0].to) || {}).name || back[0].to,
+      targetId: back[0].to,
       variables: { [APPROVE_VAR]: false }
     });
   }

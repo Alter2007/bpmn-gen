@@ -39,8 +39,35 @@ public class FlowableRun {
     public static void main(String[] args) {
         if (args.length == 0) {
             System.out.println("用法: java -cp \"<jar目录>\\*\" FlowableRun.java <file.bpmn|var=值> [...]");
+            System.out.println("      java -cp \"<jar目录>\\*\" FlowableRun.java specs.txt   （每行一条规格）");
             System.out.println("示例: FlowableRun.java \"a.bpmn|amount=800\" \"a.bpmn|amount=6000\"");
             System.exit(2);
+        }
+
+        // 支持从文件读规格：分支覆盖会生成几十条，命令行走不下
+        if (args.length == 1 && args[0].toLowerCase().endsWith(".txt")) {
+            java.io.File specFile = new java.io.File(args[0]);
+            if (!specFile.exists()) {
+                System.out.println("[ERR] 规格文件不存在: " + args[0]);
+                System.exit(2);
+            }
+            java.util.List<String> loaded = new java.util.ArrayList<String>();
+            try {
+                java.io.BufferedReader br = new java.io.BufferedReader(
+                    new java.io.InputStreamReader(new java.io.FileInputStream(specFile), "UTF-8"));
+                String line;
+                while ((line = br.readLine()) != null) {
+                    line = line.trim();
+                    if (line.isEmpty() || line.startsWith("#")) continue;
+                    loaded.add(line);
+                }
+                br.close();
+            } catch (Exception e) {
+                System.out.println("[ERR] 读取规格文件失败: " + e.getMessage());
+                System.exit(2);
+            }
+            args = loaded.toArray(new String[0]);
+            System.out.println("  从规格文件加载 " + args.length + " 条用例");
         }
 
         ProcessEngine engine;
@@ -105,6 +132,21 @@ public class FlowableRun {
                         definitionId = pd.getId();
                         definitionByDeployment.put(filePath, definitionId);
                         System.out.println("  部署 OK: " + f.getName() + "  key=" + pd.getKey());
+
+                        // 自动补齐 BPMN 里出现的处理人变量（flowable:assignee="${xxx}"），
+                        // 否则新模板的 ${reviewer} ${gm} 之类会让引擎抛 Unknown property
+                        try {
+                            String xml = new String(java.nio.file.Files.readAllBytes(f.toPath()), "UTF-8");
+                            java.util.regex.Matcher m = java.util.regex.Pattern
+                                .compile("flowable:assignee=\"\\$\\{([^}]+)\\}\"").matcher(xml);
+                            while (m.find()) {
+                                String role = m.group(1).trim();
+                                if (role.isEmpty()) continue;
+                                if (!vars.containsKey(role)) {
+                                    vars.put(role, "u_" + role);
+                                }
+                            }
+                        } catch (Exception ignore) { /* 读不到就算了，主流程继续 */ }
                     }
                 } catch (Exception e) {
                     System.out.println("[FAIL] " + label + "  部署失败: " + e.getClass().getSimpleName() + ": " + e.getMessage());
@@ -114,6 +156,7 @@ public class FlowableRun {
                 List<String> path = new ArrayList<String>();
                 ProcessInstance pi;
                 try {
+                    injectRoles(f, vars);
                     pi = runtimeService.startProcessInstanceById(definitionId, vars);
                 } catch (Exception e) {
                     System.out.println("[FAIL] " + label + "  启动实例失败: " + e.getClass().getSimpleName() + ": " + e.getMessage());
@@ -123,7 +166,9 @@ public class FlowableRun {
                 // 前缀断言：驳回/退回会形成环，流程不会"结束"，
                 // 只要路径前 k 段符合预期就停下并判定通过。
                 String expectPrefix = prefixOf(parts);
+                String expectC = containsOf(parts);
                 boolean prefixDone = false;
+                boolean containsDone = false;
                 try {
                     // 一次完成一个任务、每次重新查询。
                     // 多实例（会签/或签）下：或签在第一个人签完后其余任务立即失效，
@@ -138,9 +183,20 @@ public class FlowableRun {
                         Task t = tasks.get(0);
                         path.add(stripTaskPrefix(t.getTaskDefinitionKey()) + "「" + safe(t.getName()) + "」");
                         taskService.complete(t.getId());
-                        if (expectPrefix != null && joinKeys(path).startsWith(expectPrefix)) {
+                        String keys = joinKeys(path);
+                        if (expectPrefix != null && keys.startsWith(expectPrefix)) {
                             prefixDone = true;
                             break;
+                        }
+                        // 驳回类断言：目标节点出现即算命中，不必等流程结束
+                        // （驳回天然会回到前序节点，流程本来就不会自行结束）
+                        if (expectC != null) {
+                            boolean all = true;
+                            for (String need : expectC.split(",")) {
+                                String n = need.trim();
+                                if (!n.isEmpty() && keys.indexOf(n) == -1) { all = false; break; }
+                            }
+                            if (all) { containsDone = true; break; }
                         }
                     }
                 } catch (Exception e) {
@@ -184,7 +240,7 @@ public class FlowableRun {
                 }
 
                 // 前缀断言不要求流程结束（驳回环本来就不会结束）
-                boolean settled = prefixDone || ended;
+                boolean settled = prefixDone || containsDone || ended;
                 if (settled && !path.isEmpty() && assertOk) {
                     ok++;
                     System.out.println("[PASS] " + label);
@@ -203,6 +259,19 @@ public class FlowableRun {
         System.exit(ok == total && total > 0 ? 0 : 1);
     }
 
+    /** 把 BPMN 里出现的处理人变量（flowable:assignee="${x}"）补进变量表，缺什么补什么 */
+    private static void injectRoles(File f, Map<String, Object> vars) {
+        try {
+            String xml = new String(java.nio.file.Files.readAllBytes(f.toPath()), "UTF-8");
+            java.util.regex.Matcher m = java.util.regex.Pattern
+                .compile("flowable:assignee=\"\\$\\{([^}]+)\\}\"").matcher(xml);
+            while (m.find()) {
+                String role = m.group(1).trim();
+                if (role.isEmpty()) continue;
+                if (!vars.containsKey(role)) vars.put(role, "u_" + role);
+            }
+        } catch (Exception ignore) { /* 读不到就算了 */ }
+    }
     private static Map<String, Object> parseVars(String s) {
         Map<String, Object> vars = new HashMap<String, Object>();
         for (String r : ROLE_VARS) vars.put(r, "u_" + r);
