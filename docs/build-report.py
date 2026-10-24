@@ -153,7 +153,7 @@ def table(headers, rows, widths=None, size=9):
 
 
 # ============================ 封面 ============================
-for _ in range(3):
+for _ in range(1):
     doc.add_paragraph()
 
 p("BPMN 审批流生成器", size=30, bold=True, align=WD_ALIGN_PARAGRAPH.CENTER, space_after=10)
@@ -172,10 +172,11 @@ table(
         ["大模型", "DeepSeek（OpenAI 兼容接口），可一键切换通义千问"],
         ["引擎方言", "Flowable 7（xmlns:flowable）"],
         ["开源许可", "Apache License 2.0"],
+        ["演示视频", "https://www.bilibili.com/video/BV1FvHA6YEyP/（P1 走大模型 / P2 离线模式）"],
         ["文档版本", "v1.0"],
     ],
     widths=[3.2, 12.3],
-    size=9.5,
+    size=9,
 )
 
 p("本项目的全部技术结论均可在仓库内用一条命令复现：verify-all.cmd",
