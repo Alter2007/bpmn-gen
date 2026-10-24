@@ -347,7 +347,8 @@ function generateFromText(text, opts) {
   }
 
   // 提示按"用户能看懂"的粒度汇总，同一件事只说一遍
-  if (filledNumeric.length === 0) {
+  // 只有当模板真的有数值槽位时，才需要抱怨"没认出数值"
+  if (order.length > 0 && filledNumeric.length === 0) {
     warnings.push('没从这句话里认出任何数值，' + order.map(slotLabel).join('、') + ' 全部按模板默认值生成；' +
       '想指定就直接写数字（例如「超过1000」或「超过五千」）');
   }
