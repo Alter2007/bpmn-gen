@@ -42,6 +42,12 @@ function currentConfig() {
   return resolveConfig(runtimeKey ? { apiKey: runtimeKey } : {});
 }
 
+// 心跳：页面活着就定时报一次。窗口关掉后超过阈值没动静，服务自动退出。
+// 目的：避免残留进程一直占着内存里的旧密钥，导致「下次打开莫名已就绪」。
+let lastPing = 0;
+let sawPing = false;
+const IDLE_LIMIT_MS = 35000;
+
 function maskKey(k) {
   if (!k) return '';
   if (k.length <= 8) return '****';
@@ -256,6 +262,13 @@ async function handleRequest(req, res) {
     return;
   }
 
+  if (p === '/api/ping') {
+    lastPing = Date.now();
+    sawPing = true;
+    sendJson(res, 200, { ok: true });
+    return;
+  }
+
   if (p === '/api/key') {
     const cfg = currentConfig();
 
@@ -384,15 +397,23 @@ server.listen(PORT, HOST, () => {
   console.log('  数据  : ' + OUT);
   console.log('  模型  : ' + cfg.providerName + ' / ' + cfg.model + '（Key ' + (cfg.hasKey ? '已就绪' : '未设置 —— 可在网页「设置」里粘贴，或只用离线模板') + '）');
   console.log('  模板  : ' + loadTemplates().length + ' 个');
-  console.log('  说明  : 前台进程，Ctrl+C 结束；不注册服务、不建数据库');
+  console.log('  说明  : 前台进程；关闭页面约 35 秒后自动退出，不注册服务、不建数据库');
   console.log('');
 });
 
 server.on('error', (e) => {
   if (e.code === 'EADDRINUSE') {
-    console.log('[ERR] 端口 ' + PORT + ' 被占用，换一个: node web/serve.js 8100');
+    console.log('[ERR] 端口 ' + PORT + ' 被占用。若为上次残留进程，可用启动器重新打开，或运行 停止应用.vbs');
   } else {
     console.log('[ERR] ' + e.message);
   }
   process.exit(1);
 });
+
+// 空闲看门狗：页面关掉后自动收工（刷新页面有 35 秒宽限，不受影响）
+setInterval(() => {
+  if (sawPing && Date.now() - lastPing > IDLE_LIMIT_MS) {
+    console.log('[空闲] 页面已关闭超过 35 秒，服务自动退出');
+    process.exit(0);
+  }
+}, 5000);

@@ -28,6 +28,19 @@ ElseIf fso.FileExists("C:\Program Files\Microsoft\Edge\Application\msedge.exe") 
   edge = "C:\Program Files\Microsoft\Edge\Application\msedge.exe"
 End If
 
+' ---- stop any previous instance so every launch starts from a clean process ----
+' (otherwise an orphan server keeps the old API key in memory)
+Dim http
+On Error Resume Next
+Set http = CreateObject("MSXML2.ServerXMLHTTP.6.0")
+If Err.Number = 0 Then
+  http.open "POST", "http://127.0.0.1:8099/api/shutdown", False
+  http.setRequestHeader "Content-Type", "application/json"
+  http.send "{}"
+End If
+On Error Goto 0
+WScript.Sleep 700
+
 ' ---- start the server hidden (0 = no window, False = do not wait) ----
 sh.Run """" & nodeExe & """ ""web\serve.js""", 0, False
 WScript.Sleep 1500

@@ -65,7 +65,7 @@
 
   function api(path, opts) {
     return fetch(path, opts).catch(function () {
-      throw new Error('连不上本地服务——黑窗口可能被关掉了。请重新运行 node web\\serve.js');
+      throw new Error('连不上本地服务——应用可能已经退出了。请重新双击桌面图标。');
     }).then(function (r) {
       return r.json().then(function (j) {
         if (!r.ok) {
@@ -344,6 +344,20 @@
       toast('退出请求失败', true);
     });
   });
+
+  // ---------------- 心跳 ----------------
+  // 页面活着就每 5 秒报一次。窗口关掉后，服务端 35 秒收不到心跳会自动退出，
+  // 避免残留进程一直占着内存里的旧密钥（否则下次打开会莫名显示"已就绪"）。
+  setInterval(function () {
+    fetch('/api/ping', { cache: 'no-store' }).then(function (r) {
+      return r.ok;   // 老版本服务没有该路由（404）时静默忽略，不当作断开
+    }).catch(function () {
+      // 只有网络层失败，才说明服务真的没了
+      els.sideModel.textContent = '服务已退出';
+      els.sideProvider.textContent = '重新双击图标即可启动';
+      els.sideDot.className = 'usage-dot';
+    });
+  }, 5000);
 
   // ---------------- 模板库 ----------------
   function loadTemplates() {
