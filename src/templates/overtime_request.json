@@ -1,0 +1,93 @@
+{
+  "templateId": "overtime_request",
+  "name": "加班申请",
+  "description": "加班申请：直属主管审批后由 HR 备案",
+  "keywords": [
+    "加班",
+    "加点",
+    "工时",
+    "值班",
+    "加班费",
+    "小时",
+    "时长"
+  ],
+  "slotOrder": [],
+  "slots": [],
+  "processId": "overtimeRequest",
+  "processName": "加班申请",
+  "variables": [
+    {
+      "name": "hours",
+      "type": "number",
+      "description": "加班时长（小时）"
+    }
+  ],
+  "nodes": [
+    {
+      "id": "StartEvent_1",
+      "type": "startEvent",
+      "name": "发起加班申请"
+    },
+    {
+      "id": "Task_Apply",
+      "type": "userTask",
+      "name": "填写加班申请",
+      "assignee": "${initiator}"
+    },
+    {
+      "id": "Task_Leader",
+      "type": "userTask",
+      "name": "直属主管审批",
+      "assignee": "${manager}"
+    },
+    {
+      "id": "Task_Hr",
+      "type": "userTask",
+      "name": "HR 备案",
+      "assignee": "${hr}"
+    },
+    {
+      "id": "EndEvent_1",
+      "type": "endEvent",
+      "name": "流程结束"
+    }
+  ],
+  "flows": [
+    {
+      "id": "Flow_1",
+      "from": "StartEvent_1",
+      "to": "Task_Apply"
+    },
+    {
+      "id": "Flow_2",
+      "from": "Task_Apply",
+      "to": "Task_Leader"
+    },
+    {
+      "id": "Flow_A1",
+      "from": "Task_Leader",
+      "to": "Task_Hr",
+      "default": true
+    },
+    {
+      "id": "Flow_End",
+      "from": "Task_Hr",
+      "to": "EndEvent_1",
+      "default": true
+    },
+    {
+      "id": "Flow_9_R1",
+      "from": "Task_Leader",
+      "to": "Task_Apply",
+      "name": "驳回",
+      "condition": "${execution.getVariable('approved') == false}"
+    },
+    {
+      "id": "Flow_9_R2",
+      "from": "Task_Hr",
+      "to": "Task_Apply",
+      "name": "驳回",
+      "condition": "${execution.getVariable('approved') == false}"
+    }
+  ]
+}

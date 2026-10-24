@@ -1,0 +1,91 @@
+{
+  "templateId": "project_launch",
+  "name": "项目立项审批",
+  "description": "新项目立项：部门经理初审，总经理批准",
+  "keywords": [
+    "立项",
+    "项目",
+    "新项目",
+    "立项申请",
+    "项目启动"
+  ],
+  "slotOrder": [],
+  "slots": [],
+  "processId": "projectLaunch",
+  "processName": "项目立项审批",
+  "variables": [
+    {
+      "name": "budget",
+      "type": "number",
+      "description": "项目预算"
+    }
+  ],
+  "nodes": [
+    {
+      "id": "StartEvent_1",
+      "type": "startEvent",
+      "name": "发起项目立项审批"
+    },
+    {
+      "id": "Task_Apply",
+      "type": "userTask",
+      "name": "提交立项申请",
+      "assignee": "${initiator}"
+    },
+    {
+      "id": "Task_Dept",
+      "type": "userTask",
+      "name": "部门经理审批",
+      "assignee": "${manager}"
+    },
+    {
+      "id": "Task_Gm",
+      "type": "userTask",
+      "name": "总经理批准",
+      "assignee": "${gm}"
+    },
+    {
+      "id": "EndEvent_1",
+      "type": "endEvent",
+      "name": "流程结束"
+    }
+  ],
+  "flows": [
+    {
+      "id": "Flow_1",
+      "from": "StartEvent_1",
+      "to": "Task_Apply"
+    },
+    {
+      "id": "Flow_2",
+      "from": "Task_Apply",
+      "to": "Task_Dept"
+    },
+    {
+      "id": "Flow_A1",
+      "from": "Task_Dept",
+      "to": "Task_Gm",
+      "default": true
+    },
+    {
+      "id": "Flow_End",
+      "from": "Task_Gm",
+      "to": "EndEvent_1",
+      "default": true
+    },
+    {
+      "id": "Flow_9_R1",
+      "from": "Task_Dept",
+      "to": "Task_Apply",
+      "name": "驳回",
+      "condition": "${execution.getVariable('approved') == false}"
+    },
+    {
+      "id": "Flow_9_R2",
+      "from": "Task_Gm",
+      "to": "Task_Apply",
+      "name": "驳回",
+      "condition": "${execution.getVariable('approved') == false}"
+    }
+  ]
+}

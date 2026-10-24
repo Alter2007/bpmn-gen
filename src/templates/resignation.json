@@ -1,0 +1,109 @@
+{
+  "templateId": "resignation",
+  "name": "离职审批",
+  "description": "员工离职：主管审批、HR 审批、工作交接确认",
+  "keywords": [
+    "离职",
+    "辞职",
+    "离职申请",
+    "辞退"
+  ],
+  "slotOrder": [],
+  "slots": [],
+  "processId": "resignation",
+  "processName": "离职审批",
+  "variables": [
+    {
+      "name": "lastDay",
+      "type": "string",
+      "description": "最后工作日"
+    }
+  ],
+  "nodes": [
+    {
+      "id": "StartEvent_1",
+      "type": "startEvent",
+      "name": "发起离职审批"
+    },
+    {
+      "id": "Task_Apply",
+      "type": "userTask",
+      "name": "提交离职申请",
+      "assignee": "${initiator}"
+    },
+    {
+      "id": "Task_Leader",
+      "type": "userTask",
+      "name": "直属主管审批",
+      "assignee": "${manager}"
+    },
+    {
+      "id": "Task_Hr",
+      "type": "userTask",
+      "name": "HR 审批",
+      "assignee": "${hr}"
+    },
+    {
+      "id": "Task_Handover",
+      "type": "userTask",
+      "name": "工作交接确认",
+      "assignee": "${manager}"
+    },
+    {
+      "id": "EndEvent_1",
+      "type": "endEvent",
+      "name": "流程结束"
+    }
+  ],
+  "flows": [
+    {
+      "id": "Flow_1",
+      "from": "StartEvent_1",
+      "to": "Task_Apply"
+    },
+    {
+      "id": "Flow_2",
+      "from": "Task_Apply",
+      "to": "Task_Leader"
+    },
+    {
+      "id": "Flow_A1",
+      "from": "Task_Leader",
+      "to": "Task_Hr",
+      "default": true
+    },
+    {
+      "id": "Flow_A2",
+      "from": "Task_Hr",
+      "to": "Task_Handover",
+      "default": true
+    },
+    {
+      "id": "Flow_End",
+      "from": "Task_Handover",
+      "to": "EndEvent_1",
+      "default": true
+    },
+    {
+      "id": "Flow_9_R1",
+      "from": "Task_Leader",
+      "to": "Task_Apply",
+      "name": "驳回",
+      "condition": "${execution.getVariable('approved') == false}"
+    },
+    {
+      "id": "Flow_9_R2",
+      "from": "Task_Hr",
+      "to": "Task_Apply",
+      "name": "驳回",
+      "condition": "${execution.getVariable('approved') == false}"
+    },
+    {
+      "id": "Flow_9_R3",
+      "from": "Task_Handover",
+      "to": "Task_Apply",
+      "name": "驳回",
+      "condition": "${execution.getVariable('approved') == false}"
+    }
+  ]
+}

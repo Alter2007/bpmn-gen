@@ -2,7 +2,7 @@
   "templateId": "amount_tiered",
   "name": "金额分级审批",
   "description": "按金额区间分级审批：小额一级审批，中额升级审批，大额财务复核",
-  "keywords": ["报销", "差旅", "金额", "费用", "分级", "超过", "小于", "大于", "超过", "预算", "标准"],
+  "keywords": ["报销", "差旅", "金额", "费用", "分级", "标准", "超过", "小于", "大于"],
   "slotOrder": ["tier1", "tier2"],
   "slots": [
     { "name": "subject", "type": "string", "default": "报销", "label": "业务对象" },
