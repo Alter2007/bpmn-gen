@@ -77,12 +77,15 @@ function buildForm(ir, template) {
   }));
 
   const approvalTasks = (ir.nodes || []).filter((n) => n.type === 'userTask');
-  fields.push({
-    id: APPROVE_VAR,
-    label: '是否通过（false 时退回发起人）',
-    type: 'boolean',
-    required: true
-  });
+  // 模板可能已经声明了 approved 变量，别重复添加
+  if (!fields.some((f) => f.id === APPROVE_VAR)) {
+    fields.push({
+      id: APPROVE_VAR,
+      label: '是否通过（false 时退回发起人）',
+      type: 'boolean',
+      required: true
+    });
+  }
 
   return {
     formKey: 'form_' + (ir.id || 'process'),

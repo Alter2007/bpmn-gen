@@ -215,8 +215,19 @@ function analyze(ir) {
       for (const id of ids) used.add(id);
     }
   }
+  // 多实例的 collection / elementVariable / completionCondition 也算"被使用"，
+  // 否则会签模板会误报"approvers 已声明但未使用"
+  for (const n of nodes) {
+    if (!n.multiInstance) continue;
+    if (n.multiInstance.collection) used.add(n.multiInstance.collection);
+    if (n.multiInstance.elementVariable) used.add(n.multiInstance.elementVariable);
+    if (n.multiInstance.completionCondition) {
+      const ids = String(n.multiInstance.completionCondition).match(/[A-Za-z_][A-Za-z0-9_]*/g) || [];
+      for (const id of ids) used.add(id);
+    }
+  }
   for (const v of declared) {
-    if (!used.has(v)) warnings.push(`变量 ${v} 已声明但条件表达式中未使用`);
+    if (!used.has(v)) warnings.push(`变量 ${v} 已声明但流程里未使用`);
   }
 
   return { errors, warnings };
