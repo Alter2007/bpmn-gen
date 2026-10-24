@@ -8,7 +8,7 @@
 
 | 要求 | 文件 / 位置 | 状态 |
 |---|---|---|
-| 代码仓库链接 | [github.com/Alter2007/bpmn-gen](https://github.com/Alter2007/bpmn-gen)（67 文件 / 3 次提交，Public，Apache-2.0） | ✅ 已上线 |
+| 代码仓库链接 | [github.com/Alter2007/bpmn-gen](https://github.com/Alter2007/bpmn-gen)（67 文件 / 4 次提交，Public，Apache-2.0） | ✅ 已上线 |
 | 作品介绍文档（推荐 PDF） | [`docs/bpmn-gen-report.pdf`](docs/bpmn-gen-report.pdf)（11 页） | ✅ 已完成 |
 | 作品演示视频链接 | [B 站 BV1FvHA6YEyP](https://www.bilibili.com/video/BV1FvHA6YEyP/)（P1 大模型版 2:14 / P2 离线版 2:38） | ✅ 已发布 |
 
