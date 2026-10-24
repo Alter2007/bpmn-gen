@@ -34,15 +34,39 @@ jobs:
           distribution: temurin
           java-version: '17'
 
+      # 用 pwsh 包一层：把输出同时写进日志，失败时把末尾 40 行写进运行摘要页，
+      # 这样在 Actions 页面上直接能看到挂在哪一层，不必点进日志。
       - name: 六层验证
+        shell: pwsh
+        run: |
+          $ErrorActionPreference = 'Continue'
+          cmd /c "verify-all.cmd 2>&1" | Tee-Object -FilePath verify.log
+          $rc = $LASTEXITCODE
+          Write-Host "verify-all 退出码: $rc"
+          if ($rc -ne 0) {
+            "## 六层验证失败：末尾 40 行" | Out-File -Append -Encoding utf8 $env:GITHUB_STEP_SUMMARY
+            '```' | Out-File -Append -Encoding utf8 $env:GITHUB_STEP_SUMMARY
+            Get-Content verify.log -Tail 40 -Encoding utf8 | Out-File -Append -Encoding utf8 $env:GITHUB_STEP_SUMMARY
+            '```' | Out-File -Append -Encoding utf8 $env:GITHUB_STEP_SUMMARY
+          } else {
+            "六层验证全部通过 ✅" | Out-File -Append -Encoding utf8 $env:GITHUB_STEP_SUMMARY
+          }
+          exit $rc
+
+      # artifact 动作不允许路径里出现 ".."，所以要先把产物拷进工作区
+      - name: 收集产物
+        if: failure()
         shell: cmd
-        run: verify-all.cmd
+        run: |
+          if not exist ci-artifacts mkdir ci-artifacts
+          if exist "..\.data\out\*.bpmn" copy /y "..\.data\out\*.bpmn" ci-artifacts\ >nul
+          dir /b ci-artifacts
 
       - name: 失败时上传生成物
         if: failure()
         uses: actions/upload-artifact@v4
         with:
           name: generated-bpmn
-          path: ${{ github.workspace }}/../.data/out
+          path: ci-artifacts
           if-no-files-found: ignore
           retention-days: 7
