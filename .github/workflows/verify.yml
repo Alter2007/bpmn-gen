@@ -53,6 +53,10 @@ jobs:
           }
           exit $rc
 
+      # 对照实验的模板侧基线：不需要 API Key，确保"12 条业务描述 100% 通过官方校验"
+      - name: 对照实验基线（模板侧）
+        shell: cmd
+        run: node scripts\compare-raw-xml.js --dry-run --n 12
       # artifact 动作不允许路径里出现 ".."，所以要先把产物拷进工作区
       - name: 收集产物
         if: failure()
