@@ -18,6 +18,11 @@
       "name": "credit",
       "type": "string",
       "description": "供应商信用代码"
+    },
+    {
+      "name": "overseas",
+      "type": "boolean",
+      "description": "是否境外供应商（境外需合规审核）"
     }
   ],
   "nodes": [
@@ -31,6 +36,17 @@
       "type": "userTask",
       "name": "提交供应商资料",
       "assignee": "${initiator}"
+    },
+    {
+      "id": "Gateway_Overseas",
+      "type": "exclusiveGateway",
+      "name": "是否境外供应商"
+    },
+    {
+      "id": "Task_Overseas",
+      "type": "userTask",
+      "name": "合规审核",
+      "assignee": "${legal}"
     },
     {
       "id": "Task_Qualify",
@@ -65,7 +81,7 @@
     {
       "id": "Flow_2",
       "from": "Task_Apply",
-      "to": "Task_Qualify"
+      "to": "Gateway_Overseas"
     },
     {
       "id": "Flow_A1",
@@ -102,6 +118,33 @@
     {
       "id": "Flow_9_R3",
       "from": "Task_Finance",
+      "to": "Task_Apply",
+      "name": "驳回",
+      "condition": "${execution.getVariable('approved') != null && execution.getVariable('approved') == false}"
+    },
+    {
+      "id": "Flow_Overseas_Y",
+      "from": "Gateway_Overseas",
+      "to": "Task_Overseas",
+      "name": "境外",
+      "condition": "${overseas == true}"
+    },
+    {
+      "id": "Flow_Overseas_N",
+      "from": "Gateway_Overseas",
+      "to": "Task_Qualify",
+      "name": "境内",
+      "default": true
+    },
+    {
+      "id": "Flow_Overseas_M",
+      "from": "Task_Overseas",
+      "to": "Task_Qualify",
+      "default": true
+    },
+    {
+      "id": "Flow_Overseas_R",
+      "from": "Task_Overseas",
       "to": "Task_Apply",
       "name": "驳回",
       "condition": "${execution.getVariable('approved') != null && execution.getVariable('approved') == false}"

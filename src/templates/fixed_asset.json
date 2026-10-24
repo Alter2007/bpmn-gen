@@ -18,6 +18,11 @@
       "name": "assetNo",
       "type": "string",
       "description": "资产编号"
+    },
+    {
+      "name": "disposal",
+      "type": "boolean",
+      "description": "是否为资产处置（处置需资产管理员复核）"
     }
   ],
   "nodes": [
@@ -31,6 +36,17 @@
       "type": "userTask",
       "name": "提交资产申请",
       "assignee": "${initiator}"
+    },
+    {
+      "id": "Gateway_Disposal",
+      "type": "exclusiveGateway",
+      "name": "是否需要处置资产"
+    },
+    {
+      "id": "Task_Disposal",
+      "type": "userTask",
+      "name": "资产管理员复核",
+      "assignee": "${admin}"
     },
     {
       "id": "Task_Dept",
@@ -59,7 +75,7 @@
     {
       "id": "Flow_2",
       "from": "Task_Submit",
-      "to": "Task_Dept"
+      "to": "Gateway_Disposal"
     },
     {
       "id": "Flow_A1",
@@ -83,6 +99,33 @@
     {
       "id": "Flow_R2",
       "from": "Task_Admin",
+      "to": "Task_Submit",
+      "name": "驳回",
+      "condition": "${execution.getVariable('approved') != null && execution.getVariable('approved') == false}"
+    },
+    {
+      "id": "Flow_Disposal_Y",
+      "from": "Gateway_Disposal",
+      "to": "Task_Disposal",
+      "name": "处置",
+      "condition": "${disposal == true}"
+    },
+    {
+      "id": "Flow_Disposal_N",
+      "from": "Gateway_Disposal",
+      "to": "Task_Dept",
+      "name": "领用",
+      "default": true
+    },
+    {
+      "id": "Flow_Disposal_M",
+      "from": "Task_Disposal",
+      "to": "Task_Dept",
+      "default": true
+    },
+    {
+      "id": "Flow_Disposal_R",
+      "from": "Task_Disposal",
       "to": "Task_Submit",
       "name": "驳回",
       "condition": "${execution.getVariable('approved') != null && execution.getVariable('approved') == false}"

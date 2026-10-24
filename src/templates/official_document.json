@@ -19,6 +19,11 @@
       "name": "docNo",
       "type": "string",
       "description": "文号"
+    },
+    {
+      "name": "urgent",
+      "type": "boolean",
+      "description": "是否急件公文（急件需主要领导签发）"
     }
   ],
   "nodes": [
@@ -32,6 +37,17 @@
       "type": "userTask",
       "name": "拟稿",
       "assignee": "${initiator}"
+    },
+    {
+      "id": "Gateway_Urgent",
+      "type": "exclusiveGateway",
+      "name": "是否急件"
+    },
+    {
+      "id": "Task_Urgent",
+      "type": "userTask",
+      "name": "主要领导签发",
+      "assignee": "${leader}"
     },
     {
       "id": "Task_Review",
@@ -66,7 +82,7 @@
     {
       "id": "Flow_2",
       "from": "Task_Submit",
-      "to": "Task_Review"
+      "to": "Gateway_Urgent"
     },
     {
       "id": "Flow_A1",
@@ -103,6 +119,33 @@
     {
       "id": "Flow_R3",
       "from": "Task_Sign",
+      "to": "Task_Submit",
+      "name": "驳回",
+      "condition": "${execution.getVariable('approved') != null && execution.getVariable('approved') == false}"
+    },
+    {
+      "id": "Flow_Urgent_Y",
+      "from": "Gateway_Urgent",
+      "to": "Task_Urgent",
+      "name": "急件",
+      "condition": "${urgent == true}"
+    },
+    {
+      "id": "Flow_Urgent_N",
+      "from": "Gateway_Urgent",
+      "to": "Task_Review",
+      "name": "平件",
+      "default": true
+    },
+    {
+      "id": "Flow_Urgent_M",
+      "from": "Task_Urgent",
+      "to": "Task_Review",
+      "default": true
+    },
+    {
+      "id": "Flow_Urgent_R",
+      "from": "Task_Urgent",
       "to": "Task_Submit",
       "name": "驳回",
       "condition": "${execution.getVariable('approved') != null && execution.getVariable('approved') == false}"

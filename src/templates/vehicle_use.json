@@ -17,6 +17,11 @@
       "name": "duration",
       "type": "number",
       "description": "用车时长（小时）"
+    },
+    {
+      "name": "outOfCity",
+      "type": "boolean",
+      "description": "是否出市用车（出市需行政经理审批）"
     }
   ],
   "nodes": [
@@ -30,6 +35,17 @@
       "type": "userTask",
       "name": "提交用车申请",
       "assignee": "${initiator}"
+    },
+    {
+      "id": "Gateway_OutOfCity",
+      "type": "exclusiveGateway",
+      "name": "是否出市"
+    },
+    {
+      "id": "Task_OutOfCity",
+      "type": "userTask",
+      "name": "行政经理审批",
+      "assignee": "${admin}"
     },
     {
       "id": "Task_Leader",
@@ -58,7 +74,7 @@
     {
       "id": "Flow_2",
       "from": "Task_Submit",
-      "to": "Task_Leader"
+      "to": "Gateway_OutOfCity"
     },
     {
       "id": "Flow_A1",
@@ -82,6 +98,33 @@
     {
       "id": "Flow_R2",
       "from": "Task_Fleet",
+      "to": "Task_Submit",
+      "name": "驳回",
+      "condition": "${execution.getVariable('approved') != null && execution.getVariable('approved') == false}"
+    },
+    {
+      "id": "Flow_OutOfCity_Y",
+      "from": "Gateway_OutOfCity",
+      "to": "Task_OutOfCity",
+      "name": "出市",
+      "condition": "${outOfCity == true}"
+    },
+    {
+      "id": "Flow_OutOfCity_N",
+      "from": "Gateway_OutOfCity",
+      "to": "Task_Leader",
+      "name": "市内",
+      "default": true
+    },
+    {
+      "id": "Flow_OutOfCity_M",
+      "from": "Task_OutOfCity",
+      "to": "Task_Leader",
+      "default": true
+    },
+    {
+      "id": "Flow_OutOfCity_R",
+      "from": "Task_OutOfCity",
       "to": "Task_Submit",
       "name": "驳回",
       "condition": "${execution.getVariable('approved') != null && execution.getVariable('approved') == false}"

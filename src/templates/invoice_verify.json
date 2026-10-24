@@ -17,6 +17,11 @@
       "name": "invoiceNo",
       "type": "string",
       "description": "发票号码"
+    },
+    {
+      "name": "abnormal",
+      "type": "boolean",
+      "description": "发票查验是否异常（异常需税务专员复核）"
     }
   ],
   "nodes": [
@@ -30,6 +35,17 @@
       "type": "userTask",
       "name": "提交发票",
       "assignee": "${initiator}"
+    },
+    {
+      "id": "Gateway_Abnormal",
+      "type": "exclusiveGateway",
+      "name": "是否查验异常"
+    },
+    {
+      "id": "Task_Abnormal",
+      "type": "userTask",
+      "name": "税务专员复核",
+      "assignee": "${finance}"
     },
     {
       "id": "Task_Check",
@@ -58,7 +74,7 @@
     {
       "id": "Flow_2",
       "from": "Task_Submit",
-      "to": "Task_Check"
+      "to": "Gateway_Abnormal"
     },
     {
       "id": "Flow_A1",
@@ -82,6 +98,33 @@
     {
       "id": "Flow_R2",
       "from": "Task_Book",
+      "to": "Task_Submit",
+      "name": "驳回",
+      "condition": "${execution.getVariable('approved') != null && execution.getVariable('approved') == false}"
+    },
+    {
+      "id": "Flow_Abnormal_Y",
+      "from": "Gateway_Abnormal",
+      "to": "Task_Abnormal",
+      "name": "异常",
+      "condition": "${abnormal == true}"
+    },
+    {
+      "id": "Flow_Abnormal_N",
+      "from": "Gateway_Abnormal",
+      "to": "Task_Check",
+      "name": "正常",
+      "default": true
+    },
+    {
+      "id": "Flow_Abnormal_M",
+      "from": "Task_Abnormal",
+      "to": "Task_Check",
+      "default": true
+    },
+    {
+      "id": "Flow_Abnormal_R",
+      "from": "Task_Abnormal",
       "to": "Task_Submit",
       "name": "驳回",
       "condition": "${execution.getVariable('approved') != null && execution.getVariable('approved') == false}"

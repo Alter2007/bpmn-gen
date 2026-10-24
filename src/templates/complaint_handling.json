@@ -18,6 +18,11 @@
       "name": "caseNo",
       "type": "string",
       "description": "工单号"
+    },
+    {
+      "name": "major",
+      "type": "boolean",
+      "description": "是否重大投诉（重大需主要领导审批）"
     }
   ],
   "nodes": [
@@ -31,6 +36,17 @@
       "type": "userTask",
       "name": "登记投诉",
       "assignee": "${initiator}"
+    },
+    {
+      "id": "Gateway_Major",
+      "type": "exclusiveGateway",
+      "name": "是否重大投诉"
+    },
+    {
+      "id": "Task_Major",
+      "type": "userTask",
+      "name": "主要领导审批",
+      "assignee": "${leader}"
     },
     {
       "id": "Task_Assign",
@@ -65,7 +81,7 @@
     {
       "id": "Flow_2",
       "from": "Task_Submit",
-      "to": "Task_Assign"
+      "to": "Gateway_Major"
     },
     {
       "id": "Flow_A1",
@@ -102,6 +118,33 @@
     {
       "id": "Flow_R3",
       "from": "Task_Review",
+      "to": "Task_Submit",
+      "name": "驳回",
+      "condition": "${execution.getVariable('approved') != null && execution.getVariable('approved') == false}"
+    },
+    {
+      "id": "Flow_Major_Y",
+      "from": "Gateway_Major",
+      "to": "Task_Major",
+      "name": "重大",
+      "condition": "${major == true}"
+    },
+    {
+      "id": "Flow_Major_N",
+      "from": "Gateway_Major",
+      "to": "Task_Assign",
+      "name": "一般",
+      "default": true
+    },
+    {
+      "id": "Flow_Major_M",
+      "from": "Task_Major",
+      "to": "Task_Assign",
+      "default": true
+    },
+    {
+      "id": "Flow_Major_R",
+      "from": "Task_Major",
       "to": "Task_Submit",
       "name": "驳回",
       "condition": "${execution.getVariable('approved') != null && execution.getVariable('approved') == false}"

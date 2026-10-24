@@ -17,6 +17,11 @@
       "name": "days",
       "type": "number",
       "description": "出差天数"
+    },
+    {
+      "name": "overseas",
+      "type": "boolean",
+      "description": "是否出境出差（出境需行政审核）"
     }
   ],
   "nodes": [
@@ -30,6 +35,17 @@
       "type": "userTask",
       "name": "提交出差申请",
       "assignee": "${initiator}"
+    },
+    {
+      "id": "Gateway_Overseas",
+      "type": "exclusiveGateway",
+      "name": "是否出境"
+    },
+    {
+      "id": "Task_Overseas",
+      "type": "userTask",
+      "name": "行政审核",
+      "assignee": "${admin}"
     },
     {
       "id": "Task_Leader",
@@ -58,7 +74,7 @@
     {
       "id": "Flow_2",
       "from": "Task_Submit",
-      "to": "Task_Leader"
+      "to": "Gateway_Overseas"
     },
     {
       "id": "Flow_A1",
@@ -82,6 +98,33 @@
     {
       "id": "Flow_R2",
       "from": "Task_Admin",
+      "to": "Task_Submit",
+      "name": "驳回",
+      "condition": "${execution.getVariable('approved') != null && execution.getVariable('approved') == false}"
+    },
+    {
+      "id": "Flow_Overseas_Y",
+      "from": "Gateway_Overseas",
+      "to": "Task_Overseas",
+      "name": "出境",
+      "condition": "${overseas == true}"
+    },
+    {
+      "id": "Flow_Overseas_N",
+      "from": "Gateway_Overseas",
+      "to": "Task_Leader",
+      "name": "国内",
+      "default": true
+    },
+    {
+      "id": "Flow_Overseas_M",
+      "from": "Task_Overseas",
+      "to": "Task_Leader",
+      "default": true
+    },
+    {
+      "id": "Flow_Overseas_R",
+      "from": "Task_Overseas",
       "to": "Task_Submit",
       "name": "驳回",
       "condition": "${execution.getVariable('approved') != null && execution.getVariable('approved') == false}"

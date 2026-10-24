@@ -17,6 +17,11 @@
       "name": "delta",
       "type": "number",
       "description": "调整金额"
+    },
+    {
+      "name": "crossYear",
+      "type": "boolean",
+      "description": "是否跨年度预算调整（跨年度需财务总监审批）"
     }
   ],
   "nodes": [
@@ -30,6 +35,17 @@
       "type": "userTask",
       "name": "提交预算调整",
       "assignee": "${initiator}"
+    },
+    {
+      "id": "Gateway_CrossYear",
+      "type": "exclusiveGateway",
+      "name": "是否跨年度调整"
+    },
+    {
+      "id": "Task_CrossYear",
+      "type": "userTask",
+      "name": "财务总监审批",
+      "assignee": "${financeDirector}"
     },
     {
       "id": "Task_Finance",
@@ -58,7 +74,7 @@
     {
       "id": "Flow_2",
       "from": "Task_Apply",
-      "to": "Task_Finance"
+      "to": "Gateway_CrossYear"
     },
     {
       "id": "Flow_A1",
@@ -82,6 +98,33 @@
     {
       "id": "Flow_9_R2",
       "from": "Task_Leader",
+      "to": "Task_Apply",
+      "name": "驳回",
+      "condition": "${execution.getVariable('approved') != null && execution.getVariable('approved') == false}"
+    },
+    {
+      "id": "Flow_CrossYear_Y",
+      "from": "Gateway_CrossYear",
+      "to": "Task_CrossYear",
+      "name": "跨年度",
+      "condition": "${crossYear == true}"
+    },
+    {
+      "id": "Flow_CrossYear_N",
+      "from": "Gateway_CrossYear",
+      "to": "Task_Finance",
+      "name": "本年度",
+      "default": true
+    },
+    {
+      "id": "Flow_CrossYear_M",
+      "from": "Task_CrossYear",
+      "to": "Task_Finance",
+      "default": true
+    },
+    {
+      "id": "Flow_CrossYear_R",
+      "from": "Task_CrossYear",
       "to": "Task_Apply",
       "name": "驳回",
       "condition": "${execution.getVariable('approved') != null && execution.getVariable('approved') == false}"

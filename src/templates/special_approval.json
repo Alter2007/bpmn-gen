@@ -18,6 +18,11 @@
       "name": "reason",
       "type": "string",
       "description": "特殊事由"
+    },
+    {
+      "name": "reportUp",
+      "type": "boolean",
+      "description": "是否需要上报上级机关"
     }
   ],
   "nodes": [
@@ -31,6 +36,17 @@
       "type": "userTask",
       "name": "提交申请",
       "assignee": "${initiator}"
+    },
+    {
+      "id": "Gateway_ReportUp",
+      "type": "exclusiveGateway",
+      "name": "是否需要上报"
+    },
+    {
+      "id": "Task_ReportUp",
+      "type": "userTask",
+      "name": "上报审核",
+      "assignee": "${leader}"
     },
     {
       "id": "Task_Director",
@@ -59,7 +75,7 @@
     {
       "id": "Flow_2",
       "from": "Task_Submit",
-      "to": "Task_Director"
+      "to": "Gateway_ReportUp"
     },
     {
       "id": "Flow_A1",
@@ -83,6 +99,33 @@
     {
       "id": "Flow_R2",
       "from": "Task_Gm",
+      "to": "Task_Submit",
+      "name": "驳回",
+      "condition": "${execution.getVariable('approved') != null && execution.getVariable('approved') == false}"
+    },
+    {
+      "id": "Flow_ReportUp_Y",
+      "from": "Gateway_ReportUp",
+      "to": "Task_ReportUp",
+      "name": "需上报",
+      "condition": "${reportUp == true}"
+    },
+    {
+      "id": "Flow_ReportUp_N",
+      "from": "Gateway_ReportUp",
+      "to": "Task_Director",
+      "name": "所内处理",
+      "default": true
+    },
+    {
+      "id": "Flow_ReportUp_M",
+      "from": "Task_ReportUp",
+      "to": "Task_Director",
+      "default": true
+    },
+    {
+      "id": "Flow_ReportUp_R",
+      "from": "Task_ReportUp",
       "to": "Task_Submit",
       "name": "驳回",
       "condition": "${execution.getVariable('approved') != null && execution.getVariable('approved') == false}"

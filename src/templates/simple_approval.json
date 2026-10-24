@@ -31,7 +31,13 @@
   ],
   "processId": "simpleApproval",
   "processName": "@subject@审批流",
-  "variables": [],
+  "variables": [
+    {
+      "name": "needReview",
+      "type": "boolean",
+      "description": "是否需要上级复核"
+    }
+  ],
   "nodes": [
     {
       "id": "StartEvent_1",
@@ -43,6 +49,17 @@
       "type": "userTask",
       "name": "提交@subject@",
       "assignee": "${initiator}"
+    },
+    {
+      "id": "Gateway_NeedReview",
+      "type": "exclusiveGateway",
+      "name": "是否需要上级复核"
+    },
+    {
+      "id": "Task_NeedReview",
+      "type": "userTask",
+      "name": "上级复核",
+      "assignee": "${director}"
     },
     {
       "id": "Task_Approve",
@@ -65,12 +82,39 @@
     {
       "id": "Flow_2",
       "from": "Task_Submit",
-      "to": "Task_Approve"
+      "to": "Gateway_NeedReview"
     },
     {
       "id": "Flow_3",
       "from": "Task_Approve",
       "to": "EndEvent_1"
+    },
+    {
+      "id": "Flow_NeedReview_Y",
+      "from": "Gateway_NeedReview",
+      "to": "Task_NeedReview",
+      "name": "需要",
+      "condition": "${needReview == true}"
+    },
+    {
+      "id": "Flow_NeedReview_N",
+      "from": "Gateway_NeedReview",
+      "to": "Task_Approve",
+      "name": "不需要",
+      "default": true
+    },
+    {
+      "id": "Flow_NeedReview_M",
+      "from": "Task_NeedReview",
+      "to": "Task_Approve",
+      "default": true
+    },
+    {
+      "id": "Flow_NeedReview_R",
+      "from": "Task_NeedReview",
+      "to": "Task_Submit",
+      "name": "驳回",
+      "condition": "${execution.getVariable('approved') != null && execution.getVariable('approved') == false}"
     }
   ]
 }

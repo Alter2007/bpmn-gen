@@ -17,6 +17,11 @@
       "name": "amount",
       "type": "number",
       "description": "借款金额"
+    },
+    {
+      "name": "overdue",
+      "type": "boolean",
+      "description": "借款人是否有超期未还借款（有则需财务总监审批）"
     }
   ],
   "nodes": [
@@ -30,6 +35,17 @@
       "type": "userTask",
       "name": "提交借款申请",
       "assignee": "${initiator}"
+    },
+    {
+      "id": "Gateway_Overdue",
+      "type": "exclusiveGateway",
+      "name": "是否超期未还"
+    },
+    {
+      "id": "Task_Overdue",
+      "type": "userTask",
+      "name": "财务总监审批",
+      "assignee": "${financeDirector}"
     },
     {
       "id": "Task_Leader",
@@ -58,7 +74,7 @@
     {
       "id": "Flow_2",
       "from": "Task_Submit",
-      "to": "Task_Leader"
+      "to": "Gateway_Overdue"
     },
     {
       "id": "Flow_A1",
@@ -82,6 +98,33 @@
     {
       "id": "Flow_R2",
       "from": "Task_Finance",
+      "to": "Task_Submit",
+      "name": "驳回",
+      "condition": "${execution.getVariable('approved') != null && execution.getVariable('approved') == false}"
+    },
+    {
+      "id": "Flow_Overdue_Y",
+      "from": "Gateway_Overdue",
+      "to": "Task_Overdue",
+      "name": "有超期",
+      "condition": "${overdue == true}"
+    },
+    {
+      "id": "Flow_Overdue_N",
+      "from": "Gateway_Overdue",
+      "to": "Task_Leader",
+      "name": "无超期",
+      "default": true
+    },
+    {
+      "id": "Flow_Overdue_M",
+      "from": "Task_Overdue",
+      "to": "Task_Leader",
+      "default": true
+    },
+    {
+      "id": "Flow_Overdue_R",
+      "from": "Task_Overdue",
       "to": "Task_Submit",
       "name": "驳回",
       "condition": "${execution.getVariable('approved') != null && execution.getVariable('approved') == false}"

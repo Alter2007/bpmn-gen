@@ -17,6 +17,11 @@
       "name": "contractNo",
       "type": "string",
       "description": "合同编号"
+    },
+    {
+      "name": "negotiated",
+      "type": "boolean",
+      "description": "是否协商一致解除（单方终止需法务审核）"
     }
   ],
   "nodes": [
@@ -30,6 +35,17 @@
       "type": "userTask",
       "name": "提交终止申请",
       "assignee": "${initiator}"
+    },
+    {
+      "id": "Gateway_Negotiated",
+      "type": "exclusiveGateway",
+      "name": "是否协商一致"
+    },
+    {
+      "id": "Task_Negotiated",
+      "type": "userTask",
+      "name": "法务审核",
+      "assignee": "${legal}"
     },
     {
       "id": "Task_Legal",
@@ -58,7 +74,7 @@
     {
       "id": "Flow_2",
       "from": "Task_Submit",
-      "to": "Task_Legal"
+      "to": "Gateway_Negotiated"
     },
     {
       "id": "Flow_A1",
@@ -82,6 +98,33 @@
     {
       "id": "Flow_R2",
       "from": "Task_Finance",
+      "to": "Task_Submit",
+      "name": "驳回",
+      "condition": "${execution.getVariable('approved') != null && execution.getVariable('approved') == false}"
+    },
+    {
+      "id": "Flow_Negotiated_Y",
+      "from": "Gateway_Negotiated",
+      "to": "Task_Negotiated",
+      "name": "协商解除",
+      "condition": "${negotiated == true}"
+    },
+    {
+      "id": "Flow_Negotiated_N",
+      "from": "Gateway_Negotiated",
+      "to": "Task_Legal",
+      "name": "单方终止",
+      "default": true
+    },
+    {
+      "id": "Flow_Negotiated_M",
+      "from": "Task_Negotiated",
+      "to": "Task_Legal",
+      "default": true
+    },
+    {
+      "id": "Flow_Negotiated_R",
+      "from": "Task_Negotiated",
       "to": "Task_Submit",
       "name": "驳回",
       "condition": "${execution.getVariable('approved') != null && execution.getVariable('approved') == false}"

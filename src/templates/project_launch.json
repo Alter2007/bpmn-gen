@@ -18,6 +18,11 @@
       "name": "budget",
       "type": "number",
       "description": "项目预算"
+    },
+    {
+      "name": "keyProject",
+      "type": "boolean",
+      "description": "是否重点项目（重点需总经理审批）"
     }
   ],
   "nodes": [
@@ -31,6 +36,17 @@
       "type": "userTask",
       "name": "提交立项申请",
       "assignee": "${initiator}"
+    },
+    {
+      "id": "Gateway_KeyProject",
+      "type": "exclusiveGateway",
+      "name": "是否重点项目"
+    },
+    {
+      "id": "Task_KeyProject",
+      "type": "userTask",
+      "name": "总经理审批",
+      "assignee": "${gm}"
     },
     {
       "id": "Task_Dept",
@@ -59,7 +75,7 @@
     {
       "id": "Flow_2",
       "from": "Task_Apply",
-      "to": "Task_Dept"
+      "to": "Gateway_KeyProject"
     },
     {
       "id": "Flow_A1",
@@ -83,6 +99,33 @@
     {
       "id": "Flow_9_R2",
       "from": "Task_Gm",
+      "to": "Task_Apply",
+      "name": "驳回",
+      "condition": "${execution.getVariable('approved') != null && execution.getVariable('approved') == false}"
+    },
+    {
+      "id": "Flow_KeyProject_Y",
+      "from": "Gateway_KeyProject",
+      "to": "Task_KeyProject",
+      "name": "重点",
+      "condition": "${keyProject == true}"
+    },
+    {
+      "id": "Flow_KeyProject_N",
+      "from": "Gateway_KeyProject",
+      "to": "Task_Dept",
+      "name": "常规",
+      "default": true
+    },
+    {
+      "id": "Flow_KeyProject_M",
+      "from": "Task_KeyProject",
+      "to": "Task_Dept",
+      "default": true
+    },
+    {
+      "id": "Flow_KeyProject_R",
+      "from": "Task_KeyProject",
       "to": "Task_Apply",
       "name": "驳回",
       "condition": "${execution.getVariable('approved') != null && execution.getVariable('approved') == false}"

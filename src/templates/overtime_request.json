@@ -20,6 +20,11 @@
       "name": "hours",
       "type": "number",
       "description": "加班时长（小时）"
+    },
+    {
+      "name": "holiday",
+      "type": "boolean",
+      "description": "是否节假日加班（节假日需 HR 复核）"
     }
   ],
   "nodes": [
@@ -33,6 +38,17 @@
       "type": "userTask",
       "name": "填写加班申请",
       "assignee": "${initiator}"
+    },
+    {
+      "id": "Gateway_Holiday",
+      "type": "exclusiveGateway",
+      "name": "是否节假日加班"
+    },
+    {
+      "id": "Task_Holiday",
+      "type": "userTask",
+      "name": "HR 复核",
+      "assignee": "${hr}"
     },
     {
       "id": "Task_Leader",
@@ -61,7 +77,7 @@
     {
       "id": "Flow_2",
       "from": "Task_Apply",
-      "to": "Task_Leader"
+      "to": "Gateway_Holiday"
     },
     {
       "id": "Flow_A1",
@@ -85,6 +101,33 @@
     {
       "id": "Flow_9_R2",
       "from": "Task_Hr",
+      "to": "Task_Apply",
+      "name": "驳回",
+      "condition": "${execution.getVariable('approved') != null && execution.getVariable('approved') == false}"
+    },
+    {
+      "id": "Flow_Holiday_Y",
+      "from": "Gateway_Holiday",
+      "to": "Task_Holiday",
+      "name": "节假日",
+      "condition": "${holiday == true}"
+    },
+    {
+      "id": "Flow_Holiday_N",
+      "from": "Gateway_Holiday",
+      "to": "Task_Leader",
+      "name": "工作日",
+      "default": true
+    },
+    {
+      "id": "Flow_Holiday_M",
+      "from": "Task_Holiday",
+      "to": "Task_Leader",
+      "default": true
+    },
+    {
+      "id": "Flow_Holiday_R",
+      "from": "Task_Holiday",
       "to": "Task_Apply",
       "name": "驳回",
       "condition": "${execution.getVariable('approved') != null && execution.getVariable('approved') == false}"

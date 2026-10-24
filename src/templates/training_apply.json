@@ -18,6 +18,11 @@
       "name": "cost",
       "type": "number",
       "description": "培训费用"
+    },
+    {
+      "name": "external",
+      "type": "boolean",
+      "description": "是否外部培训（外部培训需 HR 总监审批）"
     }
   ],
   "nodes": [
@@ -31,6 +36,17 @@
       "type": "userTask",
       "name": "提交培训申请",
       "assignee": "${initiator}"
+    },
+    {
+      "id": "Gateway_External",
+      "type": "exclusiveGateway",
+      "name": "是否外部培训"
+    },
+    {
+      "id": "Task_External",
+      "type": "userTask",
+      "name": "HR 总监审批",
+      "assignee": "${hr}"
     },
     {
       "id": "Task_Leader",
@@ -59,7 +75,7 @@
     {
       "id": "Flow_2",
       "from": "Task_Apply",
-      "to": "Task_Leader"
+      "to": "Gateway_External"
     },
     {
       "id": "Flow_A1",
@@ -83,6 +99,33 @@
     {
       "id": "Flow_9_R2",
       "from": "Task_Hr",
+      "to": "Task_Apply",
+      "name": "驳回",
+      "condition": "${execution.getVariable('approved') != null && execution.getVariable('approved') == false}"
+    },
+    {
+      "id": "Flow_External_Y",
+      "from": "Gateway_External",
+      "to": "Task_External",
+      "name": "外部培训",
+      "condition": "${external == true}"
+    },
+    {
+      "id": "Flow_External_N",
+      "from": "Gateway_External",
+      "to": "Task_Leader",
+      "name": "内部培训",
+      "default": true
+    },
+    {
+      "id": "Flow_External_M",
+      "from": "Task_External",
+      "to": "Task_Leader",
+      "default": true
+    },
+    {
+      "id": "Flow_External_R",
+      "from": "Task_External",
       "to": "Task_Apply",
       "name": "驳回",
       "condition": "${execution.getVariable('approved') != null && execution.getVariable('approved') == false}"
