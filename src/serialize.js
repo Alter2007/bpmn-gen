@@ -135,6 +135,27 @@ function serialize(ir, opts) {
       kids.push('      <bpmn:outgoing>' + escText(idMap.get(fid)) + '</bpmn:outgoing>');
     }
 
+    // 多实例（会签 / 或签）：
+    //   没有 completionCondition  -> 会签（所有人都要处理完）
+    //   有   completionCondition  -> 或签（例如 nrOfCompletedInstances >= 1，一人办好即可）
+    // 人数不是写死的：由 flowable:collection 指向的流程变量（如 approvers 列表）决定。
+    if (n.multiInstance && (n.type === 'userTask' || n.type === 'serviceTask')) {
+      const mi = n.multiInstance;
+      const miAttrs = [
+        'isSequential="' + (mi.isSequential ? 'true' : 'false') + '"',
+        'flowable:collection="' + escAttr(mi.collection) + '"',
+        'flowable:elementVariable="' + escAttr(mi.elementVariable) + '"'
+      ];
+      if (mi.completionCondition) {
+        kids.push('      <bpmn:multiInstanceLoopCharacteristics ' + miAttrs.join(' ') + '>');
+        kids.push('        <bpmn:completionCondition xsi:type="bpmn:tFormalExpression">' +
+          '<![CDATA[' + mi.completionCondition + ']]></bpmn:completionCondition>');
+        kids.push('      </bpmn:multiInstanceLoopCharacteristics>');
+      } else {
+        kids.push('      <bpmn:multiInstanceLoopCharacteristics ' + miAttrs.join(' ') + ' />');
+      }
+    }
+
     if (kids.length === 0) {
       out.push('    <' + tag + ' ' + attrs.join(' ') + ' />');
     } else {

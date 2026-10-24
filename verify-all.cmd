@@ -54,7 +54,10 @@ java -Dfile.encoding=UTF-8 -Dstdout.encoding=UTF-8 -cp "%RUNJARS%\*" "tools\flow
   "%OUTDIR%\contract-review.bpmn|expectcontains=Task_Legal,Task_Finance,Task_Business" ^
   "%OUTDIR%\travel-reject.bpmn|amount=800|expect=Task_Submit>Task_Level1" ^
   "%OUTDIR%\travel-reject.bpmn|amount=800,approved=false|expectprefix=Task_Submit>Task_Level1>Task_Submit" ^
-  "%OUTDIR%\travel-reject.bpmn|amount=6000,approved=false|expectprefix=Task_Submit>Task_Finance>Task_Submit"
+  "%OUTDIR%\travel-reject.bpmn|amount=6000,approved=false|expectprefix=Task_Submit>Task_Finance>Task_Submit" ^
+  "%OUTDIR%\mi-all.bpmn|approvers=u1+u2+u3|expect=Task_Submit>Task_Sign>Task_Sign>Task_Sign" ^
+  "%OUTDIR%\mi-all.bpmn|approvers=u1+u2|expect=Task_Submit>Task_Sign>Task_Sign" ^
+  "%OUTDIR%\mi-any.bpmn|approvers=u1+u2+u3|expect=Task_Submit>Task_Sign"
 if errorlevel 1 goto fail
 
 echo.

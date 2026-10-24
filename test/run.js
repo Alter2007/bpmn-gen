@@ -72,9 +72,11 @@ function runPositive(file) {
   check(name + ' / flowable 命名空间', xml.indexOf('xmlns:flowable="http://flowable.org/bpmn"') !== -1);
   check(name + ' / isExecutable', xml.indexOf('isExecutable="true"') !== -1);
 
+  // CDATA 的合法来源有两处：连线条件 与 多实例的 completionCondition
   const condCount = r.ir.flows.filter((f) => f.condition).length;
-  check(name + ' / 条件表达式 CDATA', countOccurrences(xml, '<![CDATA[') === condCount,
-    '期望 ' + condCount + ' 实际 ' + countOccurrences(xml, '<![CDATA['));
+  const miCondCount = r.ir.nodes.filter((n) => n.multiInstance && n.multiInstance.completionCondition).length;
+  check(name + ' / 条件表达式 CDATA', countOccurrences(xml, '<![CDATA[') === condCount + miCondCount,
+    '期望 ' + (condCount + miCondCount) + ' 实际 ' + countOccurrences(xml, '<![CDATA['));
 
   for (const n of r.ir.nodes) {
     if (n.type !== 'exclusiveGateway') continue;

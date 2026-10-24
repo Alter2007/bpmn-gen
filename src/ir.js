@@ -75,6 +75,29 @@ function validateIR(ir) {
     if (isGateway(n.type) && typeof n.name !== 'string') {
       warnings.push(`网关 ${n.id || at} 建议给 name，便于业务方阅读`);
     }
+
+    // 多实例（会签 / 或签）：只允许挂在 userTask / serviceTask 上
+    if (n.multiInstance !== undefined && n.multiInstance !== null) {
+      if (n.type !== 'userTask' && n.type !== 'serviceTask') {
+        errors.push(`${at}(${n.id || '?'}) 只有任务才能配置 multiInstance（会签/或签）`);
+      } else if (typeof n.multiInstance !== 'object') {
+        errors.push(`${at}(${n.id || '?'}) multiInstance 应为对象`);
+      } else {
+        const mi = n.multiInstance;
+        if (!mi.collection || typeof mi.collection !== 'string') {
+          errors.push(`${at}(${n.id || '?'}) multiInstance.collection 必填，例如 "approvers"`);
+        }
+        if (!mi.elementVariable || typeof mi.elementVariable !== 'string') {
+          errors.push(`${at}(${n.id || '?'}) multiInstance.elementVariable 必填，例如 "approver"`);
+        }
+        if (mi.completionCondition !== undefined && typeof mi.completionCondition !== 'string') {
+          errors.push(`${at}(${n.id || '?'}) multiInstance.completionCondition 应为字符串表达式`);
+        }
+        if (mi.completionCondition && !/\$\{.*\}/.test(mi.completionCondition)) {
+          warnings.push(`${at}(${n.id || '?'}) completionCondition 不像 Flowable 表达式（建议 ${'${...}'} 包裹）`);
+        }
+      }
+    }
   });
 
   // ---- 连线 ----

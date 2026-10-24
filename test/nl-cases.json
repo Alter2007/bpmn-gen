@@ -241,5 +241,21 @@
       "分管领导审批",
       "主要领导审批"
     ]
+  },
+  {
+    "name": "多人会签",
+    "text": "多人会签，全部签完才通过",
+    "expectTemplate": "multi_sign_all",
+    "expectNames": [
+      "会签（全部签完才通过）"
+    ]
+  },
+  {
+    "name": "或签任一人",
+    "text": "或签，任意一人处理即可",
+    "expectTemplate": "multi_sign_any",
+    "expectNames": [
+      "或签（任一人签完即通过）"
+    ]
   }
 ]

@@ -71,7 +71,7 @@ function buildForm(ir, template) {
   const vars = irVars.length > 0 ? irVars : ((template && template.variables) || []);
   const fields = vars.map((v) => ({
     id: v.name,
-    label: v.description || v.name,
+    label: (v.description || v.name) + (v.type === 'list' ? '（多值，逗号分隔）' : ''),
     type: v.type === 'number' ? 'long' : (v.type === 'boolean' ? 'boolean' : 'string'),
     required: true
   }));

@@ -1,0 +1,82 @@
+{
+  "templateId": "multi_sign_all",
+  "name": "多人会签",
+  "description": "多实例会签：approvers 列表里的每个人都要签，全部签完流程才继续（人数由列表长度决定）",
+  "keywords": [
+    "多人会签",
+    "全部签完",
+    "都要签",
+    "全员会签",
+    "联合会签",
+    "会签人数"
+  ],
+  "slotOrder": [],
+  "slots": [],
+  "processId": "multiSignAll",
+  "processName": "多人会签",
+  "variables": [
+    {
+      "name": "approvers",
+      "type": "list",
+      "description": "会签人列表（长度即为人数）"
+    },
+    {
+      "name": "approved",
+      "type": "boolean",
+      "description": "当前审批人是否通过"
+    }
+  ],
+  "nodes": [
+    {
+      "id": "StartEvent_1",
+      "type": "startEvent",
+      "name": "发起多人会签"
+    },
+    {
+      "id": "Task_Submit",
+      "type": "userTask",
+      "name": "提交会签申请",
+      "assignee": "${initiator}"
+    },
+    {
+      "id": "Task_Sign",
+      "type": "userTask",
+      "name": "会签（全部签完才通过）",
+      "assignee": "${approver}",
+      "multiInstance": {
+        "collection": "approvers",
+        "elementVariable": "approver"
+      }
+    },
+    {
+      "id": "EndEvent_1",
+      "type": "endEvent",
+      "name": "审批完成"
+    }
+  ],
+  "flows": [
+    {
+      "id": "Flow_1",
+      "from": "StartEvent_1",
+      "to": "Task_Submit"
+    },
+    {
+      "id": "Flow_2",
+      "from": "Task_Submit",
+      "to": "Task_Sign"
+    },
+    {
+      "id": "Flow_3",
+      "from": "Task_Sign",
+      "to": "EndEvent_1",
+      "default": true
+    },
+    {
+      "id": "Flow_4",
+      "from": "Task_Sign",
+      "to": "Task_Submit",
+      "name": "驳回",
+      "condition": "${execution.getVariable('approved') == false}"
+    }
+  ]
+}

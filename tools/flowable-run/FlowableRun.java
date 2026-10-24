@@ -125,17 +125,19 @@ public class FlowableRun {
                 String expectPrefix = prefixOf(parts);
                 boolean prefixDone = false;
                 try {
+                    // 一次完成一个任务、每次重新查询。
+                    // 多实例（会签/或签）下：或签在第一个人签完后其余任务立即失效，
+                    // 批量完成会撞上 "Cannot find task"，所以必须逐个来。
                     int guard = 0;
-                    while (guard++ < 40) {
+                    while (guard++ < 200) {
                         List<Task> tasks = taskService.createTaskQuery()
                             .processInstanceId(pi.getId())
                             .orderByTaskCreateTime().asc()
                             .list();
                         if (tasks.isEmpty()) break;
-                        for (Task t : tasks) {
-                            path.add(stripTaskPrefix(t.getTaskDefinitionKey()) + "「" + safe(t.getName()) + "」");
-                            taskService.complete(t.getId());
-                        }
+                        Task t = tasks.get(0);
+                        path.add(stripTaskPrefix(t.getTaskDefinitionKey()) + "「" + safe(t.getName()) + "」");
+                        taskService.complete(t.getId());
                         if (expectPrefix != null && joinKeys(path).startsWith(expectPrefix)) {
                             prefixDone = true;
                             break;
@@ -215,6 +217,14 @@ public class FlowableRun {
             String v = kv[1].trim();
             try {
                 if (v.matches("-?\\d+")) vars.put(k, Integer.valueOf(v));
+                // 列表：approvers=u1+u2+u3 代表三人会签。人数由列表长度决定，不写死在流程里。
+                else if (v.indexOf('+') > 0) {
+                    java.util.List<String> list = new java.util.ArrayList<String>();
+                    for (String item : v.split("\\+")) {
+                        if (!item.trim().isEmpty()) list.add(item.trim());
+                    }
+                    vars.put(k, list);
+                }
                 else if (v.matches("-?\\d+\\.\\d+")) vars.put(k, Double.valueOf(v));
                 // 布尔字面量要转成 Boolean，否则条件表达式 ${x == false} 永远不成立
                 else if (v.equalsIgnoreCase("true") || v.equalsIgnoreCase("false")) vars.put(k, Boolean.valueOf(v));

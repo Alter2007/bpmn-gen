@@ -1,0 +1,37 @@
+{
+  "id": "mi-any",
+  "name": "或签（任一人签完即通过）",
+  "processKey": "miAny",
+  "variables": [
+    { "name": "approvers", "type": "list", "description": "候选审批人列表，任一人完成即可" },
+    { "name": "approved", "type": "boolean", "description": "当前审批人是否通过" }
+  ],
+  "nodes": [
+    { "id": "StartEvent_1", "type": "startEvent", "name": "发起或签" },
+    { "id": "Task_Submit", "type": "userTask", "name": "提交申请", "assignee": "${initiator}" },
+    {
+      "id": "Task_Sign",
+      "type": "userTask",
+      "name": "或签",
+      "assignee": "${approver}",
+      "multiInstance": {
+        "collection": "approvers",
+        "elementVariable": "approver",
+        "completionCondition": "${nrOfCompletedInstances >= 1}"
+      }
+    },
+    { "id": "EndEvent_1", "type": "endEvent", "name": "审批完成" }
+  ],
+  "flows": [
+    { "id": "Flow_1", "from": "StartEvent_1", "to": "Task_Submit" },
+    { "id": "Flow_2", "from": "Task_Submit", "to": "Task_Sign" },
+    { "id": "Flow_3", "from": "Task_Sign", "to": "EndEvent_1", "default": true },
+    {
+      "id": "Flow_4",
+      "from": "Task_Sign",
+      "to": "Task_Submit",
+      "name": "驳回",
+      "condition": "${execution.getVariable('approved') == false}"
+    }
+  ]
+}
