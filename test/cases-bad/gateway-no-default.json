@@ -1,0 +1,20 @@
+{
+  "id": "bad-gateway-no-default",
+  "name": "反例：排他网关缺少默认流",
+  "processKey": "badGateway",
+  "variables": [{ "name": "amount", "type": "number" }],
+  "nodes": [
+    { "id": "StartEvent_1", "type": "startEvent", "name": "开始" },
+    { "id": "Gateway_1", "type": "exclusiveGateway", "name": "金额" },
+    { "id": "Task_A", "type": "userTask", "name": "主管审批", "assignee": "${manager}" },
+    { "id": "Task_B", "type": "userTask", "name": "总监审批", "assignee": "${director}" },
+    { "id": "EndEvent_1", "type": "endEvent", "name": "结束" }
+  ],
+  "flows": [
+    { "id": "Flow_1", "from": "StartEvent_1", "to": "Gateway_1" },
+    { "id": "Flow_2", "from": "Gateway_1", "to": "Task_A", "condition": "${amount <= 1000}" },
+    { "id": "Flow_3", "from": "Gateway_1", "to": "Task_B", "condition": "${amount > 1000}" },
+    { "id": "Flow_4", "from": "Task_A", "to": "EndEvent_1" },
+    { "id": "Flow_5", "from": "Task_B", "to": "EndEvent_1" }
+  ]
+}

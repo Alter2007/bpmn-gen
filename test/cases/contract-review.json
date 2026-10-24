@@ -1,0 +1,27 @@
+{
+  "id": "contract-review",
+  "name": "合同评审并行会签",
+  "processKey": "contractReview",
+  "variables": [],
+  "nodes": [
+    { "id": "StartEvent_1", "type": "startEvent", "name": "发起合同评审" },
+    { "id": "Task_Submit", "type": "userTask", "name": "提交合同", "assignee": "${initiator}" },
+    { "id": "Gateway_Split", "type": "parallelGateway", "name": "并行会签" },
+    { "id": "Task_Legal", "type": "userTask", "name": "法务审核", "assignee": "${legal}" },
+    { "id": "Task_Finance", "type": "userTask", "name": "财务审核", "assignee": "${finance}" },
+    { "id": "Task_Business", "type": "userTask", "name": "业务审核", "assignee": "${business}" },
+    { "id": "Gateway_Join", "type": "parallelGateway", "name": "会签汇总" },
+    { "id": "EndEvent_1", "type": "endEvent", "name": "评审完成" }
+  ],
+  "flows": [
+    { "id": "Flow_1", "from": "StartEvent_1", "to": "Task_Submit" },
+    { "id": "Flow_2", "from": "Task_Submit", "to": "Gateway_Split" },
+    { "id": "Flow_3", "from": "Gateway_Split", "to": "Task_Legal" },
+    { "id": "Flow_4", "from": "Gateway_Split", "to": "Task_Finance" },
+    { "id": "Flow_5", "from": "Gateway_Split", "to": "Task_Business" },
+    { "id": "Flow_6", "from": "Task_Legal", "to": "Gateway_Join" },
+    { "id": "Flow_7", "from": "Task_Finance", "to": "Gateway_Join" },
+    { "id": "Flow_8", "from": "Task_Business", "to": "Gateway_Join" },
+    { "id": "Flow_9", "from": "Gateway_Join", "to": "EndEvent_1" }
+  ]
+}

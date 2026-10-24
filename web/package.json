@@ -1,0 +1,10 @@
+{
+  "name": "bpmn-gen-web",
+  "private": true,
+  "version": "0.1.0",
+  "description": "可视化演示与第三方模型校验。依赖只允许出现在这一层（见 PRINCIPLES.md P-02）",
+  "dependencies": {
+    "bpmn-js": "^18.31.0",
+    "bpmn-moddle": "^10.3.1"
+  }
+}

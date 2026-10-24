@@ -1,0 +1,35 @@
+{
+  "templateId": "purchase_request",
+  "name": "采购申请分级审批",
+  "description": "采购金额分三档：部门经理、采购部、财务总监",
+  "keywords": ["采购", "购买", "供应商", "询价", "订单", "申购", "物料"],
+  "slotOrder": ["tier1", "tier2"],
+  "slots": [
+    { "name": "subject", "type": "string", "default": "采购", "label": "业务对象" },
+    { "name": "varName", "type": "string", "default": "amount", "label": "金额变量名" },
+    { "name": "tier1", "type": "number", "default": 5000, "label": "第一档上限" },
+    { "name": "tier2", "type": "number", "default": 50000, "label": "第二档上限" }
+  ],
+  "processId": "purchaseRequest",
+  "processName": "@subject@审批流",
+  "variables": [{ "name": "@varName@", "type": "number", "description": "采购金额" }],
+  "nodes": [
+    { "id": "StartEvent_1", "type": "startEvent", "name": "发起@subject@" },
+    { "id": "Task_Submit", "type": "userTask", "name": "提交@subject@申请", "assignee": "${initiator}" },
+    { "id": "Gateway_1", "type": "exclusiveGateway", "name": "@subject@金额判断" },
+    { "id": "Task_Dept", "type": "userTask", "name": "部门经理审批", "assignee": "${deptManager}" },
+    { "id": "Task_Purchase", "type": "userTask", "name": "采购部审批", "assignee": "${purchaseManager}" },
+    { "id": "Task_Finance", "type": "userTask", "name": "财务总监审批", "assignee": "${financeDirector}" },
+    { "id": "EndEvent_1", "type": "endEvent", "name": "审批完成" }
+  ],
+  "flows": [
+    { "id": "Flow_1", "from": "StartEvent_1", "to": "Task_Submit" },
+    { "id": "Flow_2", "from": "Task_Submit", "to": "Gateway_1" },
+    { "id": "Flow_3", "from": "Gateway_1", "to": "Task_Dept", "name": "≤@tier1@", "condition": "${@varName@ <= @tier1@}" },
+    { "id": "Flow_4", "from": "Gateway_1", "to": "Task_Purchase", "name": "@tier1@~@tier2@", "condition": "${@varName@ > @tier1@ && @varName@ <= @tier2@}" },
+    { "id": "Flow_5", "from": "Gateway_1", "to": "Task_Finance", "name": ">@tier2@", "default": true },
+    { "id": "Flow_6", "from": "Task_Dept", "to": "EndEvent_1" },
+    { "id": "Flow_7", "from": "Task_Purchase", "to": "EndEvent_1" },
+    { "id": "Flow_8", "from": "Task_Finance", "to": "EndEvent_1" }
+  ]
+}

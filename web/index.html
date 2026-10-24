@@ -1,0 +1,192 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>BPMN 生成器</title>
+<link rel="stylesheet" href="/vendor/assets/bpmn-js.css" />
+<link rel="stylesheet" href="/vendor/assets/diagram-js.css" />
+<link rel="stylesheet" href="/vendor/assets/bpmn-font/css/bpmn.css" />
+<link rel="stylesheet" href="/styles.css" />
+</head>
+<body>
+
+<div class="app">
+
+  <!-- ===== 左侧栏 ===== -->
+  <aside class="sidebar">
+    <div class="brand">
+      <div class="logo">
+        <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2">
+          <rect x="3" y="4" width="6" height="5" rx="1.5"/><rect x="15" y="15" width="6" height="5" rx="1.5"/>
+          <path d="M9 6.5h4a2 2 0 0 1 2 2v9"/><path d="M13 15.5V13"/>
+        </svg>
+      </div>
+      <div>
+        <div class="brand-name">BPMN 生成器</div>
+        <div class="brand-sub">AI 审批流配置工具</div>
+      </div>
+    </div>
+
+    <nav class="nav">
+      <a class="nav-item active" data-view="generate">
+        <svg viewBox="0 0 24 24" width="17" height="17" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M13 2 4.5 13.5H11l-1 8.5 8.5-11.5H12l1-8.5Z"/></svg>
+        <span>生成</span>
+      </a>
+      <a class="nav-item" data-view="templates">
+        <svg viewBox="0 0 24 24" width="17" height="17" fill="none" stroke="currentColor" stroke-width="1.8"><rect x="3" y="3" width="7" height="7" rx="1.5"/><rect x="14" y="3" width="7" height="7" rx="1.5"/><rect x="3" y="14" width="7" height="7" rx="1.5"/><rect x="14" y="14" width="7" height="7" rx="1.5"/></svg>
+        <span>模板库</span>
+      </a>
+      <a class="nav-item" data-view="verify">
+        <svg viewBox="0 0 24 24" width="17" height="17" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M12 3 5 6v6c0 4.5 3 8 7 9 4-1 7-4.5 7-9V6l-7-3Z"/><path d="m9 12 2 2 4-4"/></svg>
+        <span>验证报告</span>
+      </a>
+      <a class="nav-item" data-view="settings">
+        <svg viewBox="0 0 24 24" width="17" height="17" fill="none" stroke="currentColor" stroke-width="1.8"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.7 1.7 0 0 0 .3 1.9l.1.1a2 2 0 1 1-2.8 2.8l-.1-.1a1.7 1.7 0 0 0-2.9 1.2V21a2 2 0 1 1-4 0v-.1A1.7 1.7 0 0 0 7 19.3l-.1.1a2 2 0 1 1-2.8-2.8l.1-.1A1.7 1.7 0 0 0 3 13.6H3a2 2 0 1 1 0-4h.1A1.7 1.7 0 0 0 4.7 7l-.1-.1a2 2 0 1 1 2.8-2.8L7.5 4A1.7 1.7 0 0 0 10 3.6V3a2 2 0 1 1 4 0v.1A1.7 1.7 0 0 0 17 4.7l.1-.1a2 2 0 1 1 2.8 2.8l-.1.1a1.7 1.7 0 0 0 1.2 2.9H21a2 2 0 1 1 0 4h-.1a1.7 1.7 0 0 0-1.5 1Z"/></svg>
+        <span>设置</span>
+      </a>
+    </nav>
+
+    <div class="side-foot">
+      <div class="tips">
+        <div>输入一句业务描述即可生成</div>
+        <div>生成结果保存在 <code>.data/out</code></div>
+      </div>
+      <div class="user-card">
+        <div class="avatar">AI</div>
+        <div class="user-meta">
+          <div class="user-name" id="side-model">模型未连接</div>
+          <div class="user-sub" id="side-provider">—</div>
+        </div>
+        <div class="usage-dot" id="side-dot" title="运行状态"></div>
+      </div>
+    </div>
+  </aside>
+
+  <!-- ===== 右侧主区 ===== -->
+  <main class="main">
+
+    <!-- 视图：生成 -->
+    <section class="view active" id="view-generate">
+      <div class="page-head">
+        <h1>生成审批流</h1>
+        <p>输入一句话，自动生成可被 Flowable 直接部署的 BPMN 2.0 文件</p>
+      </div>
+
+      <div class="tabs" id="tabs">
+        <button class="tab active" data-mode="auto">自然语言生成</button>
+        <button class="tab" data-mode="offline">仅用模板（不联网）</button>
+      </div>
+
+      <div class="panel">
+        <div class="input-row">
+          <input id="desc" class="text-input" autocomplete="off"
+                 placeholder="例如：我要做一个差旅报销审批流，金额小于 1000 主管批，超过 5000 需要财务复核" />
+          <button class="btn btn-ghost" id="btn-example" title="填入一个示例">示例</button>
+          <button class="btn btn-primary" id="btn-generate">生成</button>
+        </div>
+
+        <div class="toolbar">
+          <div class="toolbar-left">
+            <svg viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M3 7a2 2 0 0 1 2-2h4l2 2h8a2 2 0 0 1 2 2v8a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V7Z"/></svg>
+            <span>我的流程 <b id="count-flows">0</b></span>
+          </div>
+          <div class="toolbar-right">
+            <input id="search" class="search-input" placeholder="搜索文件名" />
+            <button class="link-btn" id="btn-refresh">
+              <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M20 11a8 8 0 1 0-2.3 5.7"/><path d="M20 4v7h-7"/></svg>
+              刷新
+            </button>
+          </div>
+        </div>
+
+        <div class="chips" id="chips"></div>
+
+        <div class="stage">
+          <div id="canvas"></div>
+          <div class="empty" id="empty">
+            <svg viewBox="0 0 64 64" width="64" height="64" fill="none" stroke="#c9cdd4" stroke-width="2">
+              <rect x="6" y="16" width="18" height="12" rx="3"/>
+              <rect x="40" y="36" width="18" height="12" rx="3"/>
+              <path d="M24 22h8a4 4 0 0 1 4 4v12"/>
+            </svg>
+            <div class="empty-title">还没有生成任何流程</div>
+            <div class="empty-sub">在上面输入一句业务描述，点「生成」</div>
+          </div>
+          <div class="badge" id="badge"></div>
+        </div>
+
+        <div class="actions">
+          <div class="meta" id="meta"></div>
+          <div class="action-btns">
+            <button class="btn btn-ghost" id="btn-copy" disabled>复制 XML</button>
+            <button class="btn btn-primary" id="btn-download" disabled>下载 .bpmn</button>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- 视图：模板库 -->
+    <section class="view" id="view-templates">
+      <div class="page-head">
+        <h1>模板库</h1>
+        <p>内置审批流模板。新增场景只需往 <code>src/templates/</code> 放一个 JSON 文件</p>
+      </div>
+      <div class="panel">
+        <div class="toolbar">
+          <div class="toolbar-left"><span>共 <b id="count-templates">0</b> 个模板</span></div>
+        </div>
+        <div class="table-wrap">
+          <table class="table" id="table-templates">
+            <thead><tr><th>模板 ID</th><th>名称</th><th>说明</th><th>关键词</th><th>规模</th></tr></thead>
+            <tbody></tbody>
+          </table>
+        </div>
+      </div>
+    </section>
+
+    <!-- 视图：验证报告 -->
+    <section class="view" id="view-verify">
+      <div class="page-head">
+        <h1>验证报告</h1>
+        <p>五层校验结果，可用 <code>verify-all.cmd</code> 一条命令复现</p>
+      </div>
+      <div class="panel">
+        <div class="table-wrap">
+          <table class="table">
+            <thead><tr><th style="width:90px">层</th><th>检查内容</th><th style="width:220px">执行者</th><th style="width:120px">结果</th></tr></thead>
+            <tbody>
+              <tr><td>L1 良构</td><td>标签配对、根元素唯一、CDATA 完整</td><td>自研 xml-lint</td><td><span class="ok">通过</span></td></tr>
+              <tr><td>L0 契约</td><td>字段类型、id 唯一、自环、默认流唯一</td><td>src/ir.js</td><td><span class="ok">通过</span></td></tr>
+              <tr><td>L3 图论</td><td>起止唯一、悬挂节点、不可达、死路、网关默认流</td><td>src/graph.js</td><td><span class="ok">通过</span></td></tr>
+              <tr><td>L2 规范</td><td>是否符合 BPMN 2.0 官方 schema</td><td>OMG XSD + JDK 17</td><td><span class="ok">16 / 16</span></td></tr>
+              <tr><td>L2b 模型</td><td>模型能否被标准库建出来</td><td>第三方 bpmn-moddle</td><td><span class="ok">16 / 16</span></td></tr>
+              <tr><td>L4-lite</td><td>引擎能否解析并通过流程校验</td><td>Flowable 7.2.0</td><td><span class="ok">16 / 16</span></td></tr>
+              <tr><td>端到端</td><td>大模型真实调用 8 条业务描述</td><td>run-llm-tests.cmd</td><td><span class="ok">8 / 8</span></td></tr>
+            </tbody>
+          </table>
+        </div>
+        <p class="note">说明：L4-lite 证明「引擎接受这份流程定义」，尚未做真实实例运行；按项目诚实原则，不作超出证据的声明。</p>
+      </div>
+    </section>
+
+    <!-- 视图：设置 -->
+    <section class="view" id="view-settings">
+      <div class="page-head">
+        <h1>设置</h1>
+        <p>运行状态与模型接入信息（密钥只从环境变量读取，不落盘）</p>
+      </div>
+      <div class="panel">
+        <div class="kv" id="kv-settings"></div>
+      </div>
+    </section>
+
+  </main>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<script src="/vendor/bpmn-navigated-viewer.production.min.js"></script>
+<script src="/app.js"></script>
+</body>
+</html>

@@ -1,0 +1,17 @@
+{
+  "name": "bpmn-gen",
+  "version": "0.1.0",
+  "private": true,
+  "description": "自然语言 -> BPMN 2.0（Flowable）审批流生成器：确定性内核，零运行时依赖",
+  "type": "commonjs",
+  "engines": {
+    "node": ">=18"
+  },
+  "scripts": {
+    "gen": "node bin/bpmn-gen.js",
+    "test": "node test/run.js",
+    "check": "node scripts/check-principles.js"
+  },
+  "dependencies": {},
+  "devDependencies": {}
+}

@@ -1,0 +1,9 @@
+# 产物与依赖不入库（见 PRINCIPLES.md P-02 / P-09）
+node_modules/
+.data/
+.cache/
+.tools/
+*.bpmn
+*.log
+.env
+.env.*

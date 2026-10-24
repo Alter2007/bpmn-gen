@@ -1,0 +1,27 @@
+{
+  "id": "travel-expense",
+  "name": "差旅报销审批流",
+  "processKey": "travelExpense",
+  "variables": [
+    { "name": "amount", "type": "number", "description": "报销金额（元）" }
+  ],
+  "nodes": [
+    { "id": "StartEvent_1", "type": "startEvent", "name": "发起报销" },
+    { "id": "Task_Submit", "type": "userTask", "name": "提交报销单", "assignee": "${initiator}" },
+    { "id": "Gateway_Amount", "type": "exclusiveGateway", "name": "金额判断" },
+    { "id": "Task_Manager", "type": "userTask", "name": "主管审批", "assignee": "${manager}" },
+    { "id": "Task_Director", "type": "userTask", "name": "总监审批", "assignee": "${director}" },
+    { "id": "Task_Finance", "type": "userTask", "name": "财务复核", "assignee": "${finance}" },
+    { "id": "EndEvent_1", "type": "endEvent", "name": "审批完成" }
+  ],
+  "flows": [
+    { "id": "Flow_1", "from": "StartEvent_1", "to": "Task_Submit" },
+    { "id": "Flow_2", "from": "Task_Submit", "to": "Gateway_Amount" },
+    { "id": "Flow_3", "from": "Gateway_Amount", "to": "Task_Manager", "name": "≤1000", "condition": "${amount <= 1000}" },
+    { "id": "Flow_4", "from": "Gateway_Amount", "to": "Task_Director", "name": "1000~5000", "condition": "${amount > 1000 && amount <= 5000}" },
+    { "id": "Flow_5", "from": "Gateway_Amount", "to": "Task_Finance", "name": ">5000", "default": true },
+    { "id": "Flow_6", "from": "Task_Manager", "to": "EndEvent_1" },
+    { "id": "Flow_7", "from": "Task_Director", "to": "EndEvent_1" },
+    { "id": "Flow_8", "from": "Task_Finance", "to": "EndEvent_1" }
+  ]
+}

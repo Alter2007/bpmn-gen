@@ -1,0 +1,56 @@
+[
+  {
+    "name": "差旅报销-三级分级",
+    "text": "我要做一个差旅报销审批流，金额小于1000直接主管批，大于1000需要总监批，超过5000需要财务复核",
+    "expectTemplate": "amount_tiered",
+    "expectConditions": ["${amount <= 1000}", "${amount > 1000 && amount <= 5000}"],
+    "expectNames": ["主管审批", "总监审批", "财务复核"]
+  },
+  {
+    "name": "请假-三天分流",
+    "text": "请假3天以内主管审批，超过3天需要人事备案",
+    "expectTemplate": "leave_days",
+    "expectConditions": ["${days <= 3}"],
+    "expectNames": ["直属主管审批", "人事备案"]
+  },
+  {
+    "name": "费用报销-串行",
+    "text": "费用报销流程：先部门审核，再财务审核，最后归档",
+    "expectTemplate": "expense_reimburse",
+    "expectConditions": [],
+    "expectNames": ["部门审核", "财务审核", "归档入账"]
+  },
+  {
+    "name": "采购-三万",
+    "text": "采购3万元的服务器，需要部门经理和采购部审批",
+    "expectTemplate": "purchase_request",
+    "expectConditions": ["${amount <= 30000}"],
+    "expectNames": ["部门经理审批", "采购部审批"]
+  },
+  {
+    "name": "合同-三方会签",
+    "text": "采购合同需要法务、财务一起会签",
+    "expectTemplate": "contract_review",
+    "expectConditions": [],
+    "expectNames": ["法务审核", "财务审核", "业务审核"]
+  },
+  {
+    "name": "入职-并行办理",
+    "text": "新员工入职，需要人事建档、IT开户、行政分配工位",
+    "expectTemplate": "onboarding_parallel",
+    "expectConditions": [],
+    "expectNames": ["人事建档", "IT 开户", "行政分配工位"]
+  },
+  {
+    "name": "用章-审批后登记",
+    "text": "公司公章使用需要审批，用完要登记",
+    "expectTemplate": "seal_apply",
+    "expectConditions": [],
+    "expectNames": ["行政审批", "用印登记"]
+  },
+  {
+    "name": "反例-无关文本",
+    "text": "帮我订一张去上海的机票",
+    "expectMatch": false
+  }
+]

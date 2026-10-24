@@ -1,0 +1,18 @@
+BPMN-Gen（AI 驱动的审批流生成器）
+Copyright 2026 <作者姓名>
+
+This product is licensed under the Apache License, Version 2.0 (see LICENSE).
+
+---
+
+## 关于大模型辅助生成代码的声明
+
+本项目由开发者主导架构设计与核心实现；部分辅助代码由大模型生成，
+并经过人工审查、重构与逐行测试。序列化、校验、布局等核心逻辑均配有
+可复现的自动化测试（见 test/run.js）。
+
+本项目不含任何 GPL / AGPL / LGPL 传染性协议代码，许可证为 Apache-2.0。
+
+## 第三方组件
+
+见 docs/THIRD-PARTY.md。当前运行时依赖为 0 个。

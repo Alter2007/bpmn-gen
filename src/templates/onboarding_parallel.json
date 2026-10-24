@@ -1,0 +1,34 @@
+{
+  "templateId": "onboarding_parallel",
+  "name": "入职办理并行任务",
+  "description": "人事建档、IT 开户、行政工位三线并行办理",
+  "keywords": ["入职", "新员工", "报到", "人事", "工位", "电脑", "办理"],
+  "slotOrder": [],
+  "slots": [
+    { "name": "subject", "type": "string", "default": "入职", "label": "业务对象" }
+  ],
+  "processId": "onboarding",
+  "processName": "@subject@办理流程",
+  "variables": [],
+  "nodes": [
+    { "id": "StartEvent_1", "type": "startEvent", "name": "新员工报到" },
+    { "id": "Task_Submit", "type": "userTask", "name": "提交@subject@申请", "assignee": "${hr}" },
+    { "id": "Gateway_Split", "type": "parallelGateway", "name": "并行办理" },
+    { "id": "Task_HR", "type": "userTask", "name": "人事建档", "assignee": "${hr}" },
+    { "id": "Task_IT", "type": "userTask", "name": "IT 开户", "assignee": "${it}" },
+    { "id": "Task_Admin", "type": "userTask", "name": "行政分配工位", "assignee": "${admin}" },
+    { "id": "Gateway_Join", "type": "parallelGateway", "name": "办理汇总" },
+    { "id": "EndEvent_1", "type": "endEvent", "name": "入职完成" }
+  ],
+  "flows": [
+    { "id": "Flow_1", "from": "StartEvent_1", "to": "Task_Submit" },
+    { "id": "Flow_2", "from": "Task_Submit", "to": "Gateway_Split" },
+    { "id": "Flow_3", "from": "Gateway_Split", "to": "Task_HR" },
+    { "id": "Flow_4", "from": "Gateway_Split", "to": "Task_IT" },
+    { "id": "Flow_5", "from": "Gateway_Split", "to": "Task_Admin" },
+    { "id": "Flow_6", "from": "Task_HR", "to": "Gateway_Join" },
+    { "id": "Flow_7", "from": "Task_IT", "to": "Gateway_Join" },
+    { "id": "Flow_8", "from": "Task_Admin", "to": "Gateway_Join" },
+    { "id": "Flow_9", "from": "Gateway_Join", "to": "EndEvent_1" }
+  ]
+}

@@ -1,0 +1,22 @@
+# 强制行尾，保证克隆到任何平台后仍然可运行
+#   .cmd 必须 CRLF：cmd 解析器在 LF 下会把 ^ 续行解析错乱（实测踩过）
+#   其余文本保持 LF，避免无意义的整文件 diff
+*.cmd   text eol=crlf
+*.ps1   text eol=crlf
+*.bat   text eol=crlf
+*.js    text eol=lf
+*.json  text eol=lf
+*.md    text eol=lf
+*.java  text eol=lf
+*.html  text eol=lf
+*.css   text eol=lf
+*.yml   text eol=lf
+*.yaml  text eol=lf
+
+# 二进制，不做行尾转换
+*.pdf   binary
+*.docx  binary
+*.jar   binary
+*.png   binary
+*.jpg   binary
+*.mp4   binary

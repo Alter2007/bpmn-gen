@@ -1,0 +1,26 @@
+{
+  "id": "dirty",
+  "name": "脏 IR 修复用例",
+  "processKey": "dirtyFix",
+  "variables": [
+    { "name": "amount", "type": "number" }
+  ],
+  "nodes": [
+    { "type": "startEvent", "id": "StartEvent_1", "name": "开始" },
+    { "type": "userTask", "id": "Task_Submit", "name": "提交报销", "assignee": "${initiator}" },
+    { "type": "exclusiveGateway", "id": "Gateway_1", "name": "金额判断" },
+    { "type": "userTask", "id": "Task_Manager", "name": "主管审批", "assignee": "${manager}" },
+    { "type": "userTask", "id": "Task_Manager", "name": "总监审批", "assignee": "${director}" },
+    { "type": "endEvent", "id": "EndEvent_1", "name": "结束" }
+  ],
+  "flows": [
+    { "from": "StartEvent_1", "to": "Task_Submit" },
+    { "id": "Flow_2", "from": "Task_Submit", "to": "Gateway_1" },
+    { "id": "Flow_3", "from": "Gateway_1", "to": "Task_Manager", "name": "≤1000", "default": true },
+    { "id": "Flow_4", "from": "Gateway_1", "to": "Task_1", "name": ">1000", "condition": "${amount > 1000}", "default": true },
+    { "id": "Flow_5", "from": "Gateway_1", "to": "Gateway_1" },
+    { "id": "Flow_6", "from": "Gateway_1", "to": "Ghost_Node" },
+    { "id": "Flow_7", "from": "Task_Manager", "to": "EndEvent_1" },
+    { "id": "Flow_8", "from": "Task_1", "to": "EndEvent_1" }
+  ]
+}
