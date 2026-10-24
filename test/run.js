@@ -208,7 +208,8 @@ function runNlCases() {
   const tpls = loadTemplates();
   check('模板库可用（>= 8 个）', tpls.length >= 8, '当前 ' + tpls.length + ' 个');
 
-  for (const c of cases) {
+  for (let seq = 0; seq < cases.length; seq++) {
+    const c = cases[seq];
     const label = c.name || 'case';
     const g = generateFromText(c.text);
 
@@ -234,7 +235,9 @@ function runNlCases() {
     }
 
     ensureOut();
-    fs.writeFileSync(path.join(OUT, 'nl-' + label + '.bpmn'), r.xml, 'utf8');
+    // 文件名必须纯 ASCII：中文名经 cmd 传给 Java 时会被 console 码页转成 "?"，
+    // 而 "?" 是 Windows 非法路径字符，CI 上会直接抛 InvalidPathException。
+    fs.writeFileSync(path.join(OUT, 'nl-' + seq + '-' + g.templateId + '.bpmn'), r.xml, 'utf8');
     console.log('  · ' + label + ' -> ' + g.templateId + '（得分 ' + g.score + '，' + r.elements + ' 元素）');
   }
 }

@@ -25,7 +25,7 @@ echo [3/6] official OMG XSD validation ...
 set XSDDIR=..\.cache\schema\bpmn20
 set COUNT=0
 for %%f in ("..\.data\out\*.bpmn") do (
-  java "tools\xsd-validate\Validate.java" "%%f" "%XSDDIR%"
+  java -Dfile.encoding=UTF-8 "tools\xsd-validate\Validate.java" "%%f" "%XSDDIR%"
   if errorlevel 1 goto fail
   set /a COUNT+=1
 )
