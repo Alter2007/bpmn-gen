@@ -131,6 +131,41 @@ function safeName(name) {
   return /^[\w\-. \u4e00-\u9fa5]+\.bpmn$/i.test(name);
 }
 
+// ---- 交互式澄清的阈值 ----
+// 关键词得分低于 MIN_SCORE，或第一名与第二名差距小于 MARGIN，视为"没把握"，先反问；
+// 大模型路径看置信度。宁可多问一句，也不要生成一个错的流程让用户重来。
+const MIN_SCORE = 4;
+const MARGIN = 2;
+const CONFIDENCE_THRESHOLD = 0.7;
+
+function buildCandidates(ranked, limit) {
+  return (ranked || [])
+    .filter((r) => r && r.score > 0)
+    .slice(0, limit || 3)
+    .map((r) => ({
+      templateId: r.templateId,
+      name: r.name,
+      description: (r.template && r.template.description) || '',
+      score: r.score,
+      hits: r.hits || []
+    }));
+}
+
+function clarifyPayload(question, candidates, extra) {
+  return {
+    code: 200,
+    payload: Object.assign(
+      {
+        ok: false,
+        needClarify: true,
+        question: question,
+        candidates: candidates
+      },
+      extra || {}
+    )
+  };
+}
+
 async function handleGenerate(body) {
   const started = Date.now();
   const text = String(body.text || '').trim();
@@ -139,6 +174,7 @@ async function handleGenerate(body) {
   const templates = loadTemplates();
   const cfg = currentConfig();
   const wantOffline = body.mode === 'offline' || !cfg.hasKey;
+  const pick = String(body.pickTemplate || '').trim();
 
   const meta = {
     mode: wantOffline ? 'offline' : 'llm',
@@ -153,12 +189,56 @@ async function handleGenerate(body) {
     tokens: null
   };
 
+  // ---- 用户在澄清卡片里手动选定了模板：直接按模板渲染，不再猜 ----
+  if (pick !== '') {
+    const built = buildFromTemplate(pick, {}, text);
+    if (!built) {
+      return { code: 422, payload: { ok: false, error: '未知模板：' + pick } };
+    }
+    meta.mode = 'picked';
+    meta.templateId = pick;
+    meta.reason = '用户手动确认模板';
+    meta.filled = built.values;
+    const result = runPipeline(built.ir, { repair: true });
+    if (!result.ok) {
+      return { code: 422, payload: { ok: false, error: '生成的流程未通过校验', errors: result.errors } };
+    }
+    return finishGenerate(body, meta, result, started, pick);
+  }
+
   let ir;
   try {
     if (wantOffline) {
       const g = generateFromText(text);
+      const ranked = g.ranked || [];
+      const top = ranked[0];
+      const second = ranked[1];
+      const unsure =
+        !g.ok ||
+        !top ||
+        top.score < MIN_SCORE ||
+        (second && second.score > 0 && top.score - second.score < MARGIN);
+
+      if (unsure && ranked.length > 0) {
+        const cands = buildCandidates(ranked, 3);
+        if (cands.length === 0) {
+          // 一个关键词都没命中：给不出候选，直接让人补充描述
+          return {
+            code: 422,
+            payload: {
+              ok: false,
+              error: '没有识别出场景：请补充业务描述（例如"差旅报销，金额小于1000主管批"），或直接指定模板'
+            }
+          };
+        }
+        return clarifyPayload(
+          '这句话我没把握归到哪一类流程，先确认一下（选一个，或把描述写细一点）：',
+          cands,
+          { source: 'offline', topScore: top ? top.score : 0 }
+        );
+      }
       if (!g.ok) {
-        return { code: 422, payload: { ok: false, error: g.error, ranked: g.ranked || [] } };
+        return { code: 422, payload: { ok: false, error: g.error, ranked: ranked } };
       }
       meta.templateId = g.templateId;
       meta.confidence = null;
@@ -182,6 +262,34 @@ async function handleGenerate(body) {
       if (!parsed.ok) {
         return { code: 422, payload: { ok: false, error: '模型输出不可用：' + parsed.error, raw: String(r.content).slice(0, 500) } };
       }
+
+      // 模型自己也不确定：把它的判断 + 关键词候选一起摆出来，让人来定
+      const conf = typeof parsed.confidence === 'number' ? parsed.confidence : 1;
+      if (conf < CONFIDENCE_THRESHOLD) {
+        const ranked = require('../src/nl').rankTemplates(text, templates);
+        const cands = buildCandidates(ranked, 3);
+        const modelPick = {
+          templateId: parsed.templateId,
+          name: (templates.find((t) => t.templateId === parsed.templateId) || {}).name || parsed.templateId,
+          description: '模型判断（置信度 ' + conf + '）',
+          score: 0,
+          hits: []
+        };
+        const merged = [modelPick].concat(
+          cands.filter((c) => c.templateId !== parsed.templateId)
+        ).slice(0, 3);
+        return clarifyPayload(
+          '模型不太确定（置信度 ' + conf + '），请确认是哪一类流程：',
+          merged,
+          {
+            source: 'llm',
+            confidence: conf,
+            reason: parsed.reason || '',
+            tokens: r.usage ? { in: r.usage.prompt_tokens, out: r.usage.completion_tokens } : null
+          }
+        );
+      }
+
       meta.templateId = parsed.templateId;
       meta.confidence = parsed.confidence;
       meta.reason = parsed.reason;
@@ -200,10 +308,15 @@ async function handleGenerate(body) {
   if (!result.ok) {
     return { code: 422, payload: { ok: false, error: '生成的流程未通过校验', errors: result.errors, actions: result.actions } };
   }
+  return finishGenerate(body, meta, result, started, meta.templateId);
+}
+
+/** 管线通过之后的收尾：写文件 + 组装返回体 */
+function finishGenerate(body, meta, result, started, templateId) {
   meta.actions = result.actions;
 
   ensureOut();
-  const fileName = meta.templateId + '-' + stamp() + '.bpmn';
+  const fileName = templateId + '-' + stamp() + '.bpmn';
   fs.writeFileSync(path.join(OUT, fileName), result.xml, 'utf8');
 
   return {

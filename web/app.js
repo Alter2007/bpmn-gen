@@ -30,6 +30,9 @@
     btnSaveKey: $('btn-save-key'),
     btnClearKey: $('btn-clear-key'),
     btnQuit: $('btn-quit'),
+    clarify: $('clarify'),
+    clarifyQ: $('clarify-q'),
+    clarifyOpts: $('clarify-opts'),
     sideModel: $('side-model'),
     sideProvider: $('side-provider'),
     sideDot: $('side-dot'),
@@ -225,13 +228,39 @@
   }
 
   // ---------------- 生成 ----------------
-  function generate() {
+  // ---------------- 交互式澄清 ----------------
+  function hideClarify() {
+    if (els.clarify) {
+      els.clarify.hidden = true;
+      els.clarifyOpts.innerHTML = '';
+    }
+  }
+
+  function showClarify(res) {
+    if (!els.clarify) return;
+    els.clarifyQ.textContent = res.question || '请确认是哪一类流程：';
+    els.clarifyOpts.innerHTML = '';
+    (res.candidates || []).forEach(function (c) {
+      var b = document.createElement('button');
+      b.className = 'clarify-opt';
+      b.innerHTML = '<span class="co-name">' + esc(c.name || c.templateId) + '</span>' +
+        '<span class="co-desc">' + esc(c.description || '') + '</span>';
+      b.title = '点击按「' + (c.name || c.templateId) + '」生成';
+      b.addEventListener('click', function () { generate(c.templateId); });
+      els.clarifyOpts.appendChild(b);
+    });
+    els.clarify.hidden = false;
+    toast('不太确定，先确认一下场景');
+  }
+
+  function generate(pick) {
     var text = (els.desc.value || '').trim();
     if (text === '') {
       els.desc.focus();
       toast('请先输入业务描述', true);
       return;
     }
+    hideClarify();
     var oldLabel = els.btnGenerate.textContent;
     els.btnGenerate.disabled = true;
     els.btnGenerate.textContent = state.mode === 'auto' ? '生成中…' : '匹配中…';
@@ -239,8 +268,12 @@
     api('/api/generate', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ text: text, mode: state.mode })
+      body: JSON.stringify({ text: text, mode: state.mode, pickTemplate: pick || '' })
     }).then(function (res) {
+      if (res && res.needClarify) {
+        showClarify(res);
+        return;
+      }
       state.xml = res.xml;
       state.file = res.file;
       els.btnCopy.disabled = false;
