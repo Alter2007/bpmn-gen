@@ -327,7 +327,7 @@ run-llm-tests.cmd          :: 8 条用例批量回归，出一次通过率报告
 | L3 图论语义（起止唯一/悬挂/不可达/死路/网关 default/并行不含条件） | `src/graph.js` | ✅ 已实现 |
 | L2 BPMN 规范级（官方 OMG XSD） | `tools/xsd-validate/Validate.java`（JDK 17 单文件运行，零依赖） | ✅ 已实现并实测 |
 | L2b 第三方模型校验（bpmn-moddle） | `web/check-model.js`（与 bpmn-js 同源的标准模型库） | ✅ 16/16 通过 |
-| L4-lite 引擎解析 + 流程校验（Flowable 自己的代码） | `tools/flowable-check/FlowableCheck.java`（jar 按需下载到 `.cache`） | ✅ **125/125 通过** |
+| L4-lite 引擎解析 + 流程校验（Flowable 自己的代码） | `tools/flowable-check/FlowableCheck.java`（jar 按需下载到 `.cache`） | ✅ **66/66 通过** |
 | L4 实例运行（真实部署 + 执行 + 路径断言） | `tools/flowable-run/FlowableRun.java`（Flowable + H2 内存引擎） | ✅ **6/6 通过** |
 
 ## 为什么一定要有 DI
@@ -339,12 +339,13 @@ BPMN XML 分两半：`<bpmn:process>` 是**逻辑**，`<bpmndi:BPMNDiagram>` 是
 ## 目录
 
 ```
-bpmn-gen/                    73 个文件
+bpmn-gen/                    108 个文件
 ├─ 【形态 ①：命令行】根目录启动器
 │  ├─ demo.cmd               起服务 + 开浏览器
 │  ├─ nl2bpmn.cmd            一句话 → BPMN（离线）
 │  ├─ ai2bpmn.cmd            一句话 → BPMN（大模型）
 │  ├─ bpmn-gen.cmd           IR → BPMN
+│  ├─ bpmn2svg.cmd           BPMN → SVG（不开浏览器出矢量图）
 │  ├─ verify-all.cmd         六层验证一条命令跑完
 │  └─ validate-xsd.cmd / flowable-check.cmd / flowable-run.cmd / run-llm-tests.cmd
 │
@@ -356,40 +357,46 @@ bpmn-gen/                    73 个文件
 │  └─ assets/                app.ico / app-256.png
 │
 ├─ bin/                      CLI 入口（3 个）
-├─ src/                      生成内核（零依赖，18 个文件）
+├─ src/                      生成内核（零依赖：11 个模块 + 28 个模板）
 │  ├─ ir.js                  L0 契约校验
 │  ├─ graph.js               L3 图论语义校验
-│  ├─ layout.js              自动布局 + DI 坐标
-│  ├─ serialize.js           IR → BPMN XML
+│  ├─ layout.js              自动布局 + DI 坐标（回边绕行）
+│  ├─ serialize.js           IR → BPMN XML（含多实例 / 边界定时器）
 │  ├─ xml-lint.js            L1 XML 良构检查
 │  ├─ repair.js              S2 确定性修复器
-│  ├─ nl.js                  S3 关键词匹配 + 槽位抽取
+│  ├─ pipeline.js            不可跳过的管线
+│  ├─ nl.js                  关键词匹配 + 槽位抽取（含中文数字）+ 生成提示
 │  ├─ prompt.js              提示词与模型输出解析
 │  ├─ llm.js                 大模型供应商适配（DeepSeek / 百炼）
-│  ├─ pipeline.js            不可跳过的管线
 │  ├─ artifacts.js           配套产物：表单 / 说明 / 分支用例
-│  └─ templates/             8 个审批流模板（JSON，可直接增删）
-├─ web/                      Web 应用（唯一有依赖的目录）
-│  ├─ index.html / app.js / styles.css
+│  └─ templates/             28 个审批流模板（JSON，全部带真实分支）
+├─ web/                      桌面应用（唯一有依赖的目录）
+│  ├─ index.html / app.js / styles.css   含 13 页使用帮助
 │  ├─ serve.js               本地服务（同进程 require 内核，不 spawn）
 │  └─ check-model.js         bpmn-moddle 模型校验
 ├─ tools/                    Java 单文件验证器（3 个）
 │  ├─ xsd-validate/          L2 OMG 官方 XSD
 │  ├─ flowable-check/        L4-lite 引擎解析与过程校验
-│  └─ flowable-run/          L4 实例运行 + 路径断言
-├─ test/                     276 项断言（正向 / 反向 / 可修复 / 自然语言 / 提示词 / 脚本卫生）
-├─ scripts/                  零依赖工具（原则检查、批量回归、schema/jar 下载）
-├─ docs/                     8 份文档
-│  ├─ bpmn-gen-report.pdf    作品介绍（11 页）
+│  └─ flowable-run/          L4 实例运行 + 路径断言（支持 expecttimer 定时器断言）
+├─ test/                     318 项断言（正向 / 反向 / 可修复 / 自然语言 / 数值解析 / 帮助页 / 脚本卫生）
+├─ scripts/                  零依赖工具（8 个）
+│  ├─ bpmn2svg.js            BPMN → SVG 渲染（直接读 DI 坐标）
+│  ├─ coverage-specs.js      按模板自动生成分支覆盖断言
+│  ├─ compare-raw-xml.js     对照实验：模板方案 vs 大模型直出 XML
+│  └─ fetch-schema.js / fetch-flowable.js / fetch-flowable-engine.js  按需下载
+├─ docs/                     9 份文档
+│  ├─ bpmn-gen-report.pdf    作品介绍（13 页）
+│  ├─ bpmn-gen-report.docx   同上的可编辑版
+│  ├─ build-report.py        PDF 生成脚本
+│  ├─ diagram-render.py      BPMN → PNG（文档配图）
+│  ├─ images/                真实产出的流程图（SVG + PNG）
 │  ├─ ARCHITECTURE.md        架构与设计决策（答辩材料）
 │  ├─ DELIVERABLES.md        交付清单与三分钟复现
-│  ├─ VIDEO-SCRIPT.md        视频脚本
-│  ├─ DEMO-EXAMPLES.md       演示示例与预期结果
-│  ├─ THIRD-PARTY.md         第三方许可清单
-│  └─ build-report.py        PDF 生成脚本
-├─ PRINCIPLES.md             项目宪法（11 条，10 条自动检查）
-├─ LICENSE / NOTICE          Apache-2.0 + 大模型辅助声明
-└─ .gitignore / .gitattributes
+│  ├─ DEMO-EXAMPLES.md       演示用示例句
+│  ├─ THIRD-PARTY.md         第三方组件与许可
+│  └─ VIDEO-SCRIPT.md        演示视频脚本
+├─ .github/workflows/        CI：每次 push 自动跑六层验证
+└─ PRINCIPLES.md / README.md / LICENSE / NOTICE
 ```
 
 ## 开源合规声明
