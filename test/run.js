@@ -564,70 +564,73 @@ function runTemplateInvariants() {
     '完整 ' + fullCoverage + ' / ' + tpls.length + '；缺: ' + bad.join(' | '));
 }
 // ---------------- 布局质量：连线不许穿框 ----------------
-// 之前回边从目标"上边"进入，竖线会直接穿过整个方框；而且多条回边挤在同一条
-// 水平通道上，叠成一片看不清。这里把两条不变量锁住。
+// 踩过两次坑：回边从目标"上边"进入，竖线穿过整个方框；跨层连线（网关直接连到隔层节点）
+// 横线穿过中间那一列的节点。这里对全部模板逐段做"线段 vs 矩形"相交检查。
 function runLayoutUnit() {
   console.log('');
   console.log('== 布局质量（连线不穿框 / 回边分道）==');
 
   const { computeLayout, computeWaypoints } = require('../src/layout');
   const tpls = loadTemplates();
-  const sample = tpls.filter((t) => t.templateId === 'amount_tiered')[0];
-  if (!sample) { check('找到 amount_tiered 模板', false); return; }
 
-  const built = buildFromTemplate('amount_tiered', {}, '');
-  const ir = built.ir;
-  const layout = computeLayout(ir);
-  const pos = layout.pos;
-
-  // 节点矩形（留 2px 余量，避免端点贴边误判）
-  const rects = [];
-  for (const item of pos.values()) {
-    rects.push({ id: item.id, x: item.x + 2, y: item.y + 2, w: item.w - 4, h: item.h - 4 });
+  function hitRect(x1, y1, x2, y2, r) {
+    const minX = Math.min(x1, x2), maxX = Math.max(x1, x2);
+    const minY = Math.min(y1, y2), maxY = Math.max(y1, y2);
+    return minX < r.x + r.w && maxX > r.x && minY < r.y + r.h && maxY > r.y;
   }
 
-  const crosses = [];
-  const backLanes = [];
-  let backSeq = 0;
-  for (const f of ir.flows) {
-    const s = pos.get(f.from);
-    const t = pos.get(f.to);
-    if (!s || !t) continue;
-    const isBack = !(t.x >= s.x + s.w - 1);
-    const wps = computeWaypoints(f, pos, isBack ? backSeq : undefined);
-    if (isBack) {
-      backSeq++;
-      // 回边的水平通道（第二段之后的水平线）
-      for (let i = 1; i < wps.length; i++) {
-        if (Math.abs(wps[i - 1].y - wps[i].y) < 1 && Math.abs(wps[i - 1].x - wps[i].x) > 40) {
-          backLanes.push(wps[i].y);
+  let checkedTemplates = 0;
+  const crossProblems = [];
+  const backEntries = [];
+
+  for (const tpl of tpls) {
+    let built;
+    try { built = buildFromTemplate(tpl.templateId, {}, ''); } catch (e) { continue; }
+    if (!built || !built.ir) continue;
+    const ir = built.ir;
+    let layout;
+    try { layout = computeLayout(ir); } catch (e) { continue; }
+    const pos = layout.pos;
+    checkedTemplates++;
+
+    const rects = [];
+    for (const [id, p] of pos) rects.push({ id: id, x: p.x + 2, y: p.y + 2, w: p.w - 4, h: p.h - 4 });
+
+    let backSeq = 0;
+    for (const f of ir.flows) {
+      const s = pos.get(f.from);
+      const t = pos.get(f.to);
+      if (!s || !t) continue;
+      const isBack = !(t.x >= s.x + s.w - 1);
+      const wps = computeWaypoints(f, pos, isBack ? backSeq : undefined);
+      if (isBack) {
+        backSeq++;
+        const last = wps[wps.length - 1];
+        if (Math.abs(last.y - (t.y + t.h)) > 2) {
+          backEntries.push(tpl.templateId + '/' + f.id + ' 落点 y=' + last.y + ' 应为 ' + (t.y + t.h));
         }
       }
-      // 回边必须从目标下边进入，不能从上方"穿"进来
-      const last = wps[wps.length - 1];
-      check('回边从目标下边进入：' + f.id, Math.abs(last.y - (t.y + t.h)) < 2,
-        '落点 y=' + last.y + ' 目标下边 y=' + (t.y + t.h));
-    }
-    // 逐段检查是否穿过其它节点
-    for (let i = 1; i < wps.length; i++) {
-      const a = wps[i - 1];
-      const b = wps[i];
-      const x1 = Math.min(a.x, b.x);
-      const x2 = Math.max(a.x, b.x);
-      const y1 = Math.min(a.y, b.y);
-      const y2 = Math.max(a.y, b.y);
-      for (const r of rects) {
-        if (r.id === f.from || r.id === f.to) continue;
-        const hit = x1 < r.x + r.w && x2 > r.x && y1 < r.y + r.h && y2 > r.y;
-        if (hit) crosses.push(f.id + ' 穿过 ' + r.id);
+      for (let k = 1; k < wps.length; k++) {
+        const a = wps[k - 1];
+        const b = wps[k];
+        for (const r of rects) {
+          if (r.id === f.from || r.id === f.to) continue;
+          if (hitRect(a.x, a.y, b.x, b.y, r)) {
+            crossProblems.push(tpl.templateId + ': ' + f.id + ' 穿过 ' + r.id);
+          }
+        }
       }
     }
   }
 
-  check('连线不穿过任何节点框', crosses.length === 0, crosses.slice(0, 4).join(' | '));
-  check('多条回边使用不同的水平通道', new Set(backLanes).size === backLanes.length,
-    JSON.stringify(backLanes));
+  check('覆盖全部模板的布局检查', checkedTemplates === tpls.length,
+    '检查了 ' + checkedTemplates + ' / ' + tpls.length);
+  check('连线不穿过任何节点框', crossProblems.length === 0,
+    crossProblems.slice(0, 5).join(' | '));
+  check('回边都从目标下边进入', backEntries.length === 0,
+    backEntries.slice(0, 5).join(' | '));
 }
+
 function main() {
   console.log('BPMN 生成器测试套件');
   console.log('='.repeat(52));

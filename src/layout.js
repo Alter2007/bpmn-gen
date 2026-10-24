@@ -201,12 +201,56 @@ function computeLayout(ir) {
   return { pos, depth, layers };
 }
 
+/** 轴对齐线段是否与矩形相交 */
+function hitRect(x1, y1, x2, y2, r) {
+  const minX = Math.min(x1, x2);
+  const maxX = Math.max(x1, x2);
+  const minY = Math.min(y1, y2);
+  const maxY = Math.max(y1, y2);
+  return minX < r.x + r.w && maxX > r.x && minY < r.y + r.h && maxY > r.y;
+}
+
+/** 除两端节点外的所有节点矩形 */
+function otherRects(pos, aId, bId) {
+  const out = [];
+  for (const [id, p] of pos) {
+    if (id === aId || id === bId) continue;
+    out.push({ id: id, x: p.x, y: p.y, w: p.w, h: p.h });
+  }
+  return out;
+}
+
+function pathClean(wps, rects) {
+  for (let i = 1; i < wps.length; i++) {
+    const a = wps[i - 1];
+    const b = wps[i];
+    for (const r of rects) {
+      if (hitRect(a.x, a.y, b.x, b.y, r)) return false;
+    }
+  }
+  return true;
+}
+
+function dedupe(wps) {
+  const out = [];
+  for (const p of wps) {
+    const last = out[out.length - 1];
+    if (last && Math.abs(last.x - p.x) < 1 && Math.abs(last.y - p.y) < 1) continue;
+    out.push({ x: Math.round(p.x), y: Math.round(p.y) });
+  }
+  return out;
+}
+
 /**
  * 计算一条连线在 DI 中的折点。
- * 正向（左->右）：源右中 -> 目标左中。
- * 回边（目标在源左侧）：走"外侧走廊"——从源右下方拐出到列间空隙，向下走到独立 lane，
+ *
+ * 正向（左->右）：优先"源右中 -> 目标左中"直连；如果这条横线会穿过中间列的节点
+ *   （典型：网关直接连到隔层节点，中间那一列还有个"运维总监审批"），
+ *   就试若干条候选通道（直连高度 / 阻挡节点的上方或下方），取偏移最小的那条。
+ *
+ * 回边（目标在源左侧）：走"外侧走廊"——从源右下角拐出到列间空隙，向下走到独立 lane，
  *   再向左到目标正下方，最后从目标【下边】进入。
- *   绝不再从目标"上边"进（那样竖线会直接穿过整个方框，之前就是这个 bug）。
+ *   绝不再从目标"上边"进（那样竖线会直接穿过整个方框）。
  */
 function computeWaypoints(flow, pos, laneIndex) {
   const s = pos.get(flow.from);
@@ -220,16 +264,42 @@ function computeWaypoints(flow, pos, laneIndex) {
     const sy = s.cy;
     const tx = t.x;
     const ty = t.cy;
-    if (Math.abs(sy - ty) < 1) {
-      return [{ x: Math.round(sx), y: Math.round(sy) }, { x: Math.round(tx), y: Math.round(ty) }];
+    const rects = otherRects(pos, flow.from, flow.to);
+
+    // 1) 直连（同一高度时就是一条横线）
+    const direct = [{ x: sx, y: sy }, { x: tx, y: ty }];
+    if (Math.abs(sy - ty) < 1 && pathClean(direct, rects)) return dedupe(direct);
+
+    // 2) 候选通道：自己的高度、以及每个"挡在中间"的节点的上/下方
+    const cands = [Math.round(sy)];
+    for (const r of rects) {
+      if (r.x + r.w < sx - 5 || r.x > tx + 5) continue; // 不在两列之间
+      cands.push(Math.round(r.y - 28));
+      cands.push(Math.round(r.y + r.h + 28));
     }
+    cands.sort((a, b) => Math.abs(a - sy) - Math.abs(b - sy));
+
+    for (const y of cands) {
+      if (y < 0) continue;
+      const p = [{ x: sx, y: sy }];
+      if (Math.abs(y - sy) > 1) {
+        p.push({ x: sx + 16, y: sy });
+        p.push({ x: sx + 16, y: y });
+      }
+      p.push({ x: tx - 16, y: y });
+      if (Math.abs(y - ty) > 1) p.push({ x: tx - 16, y: ty });
+      p.push({ x: tx, y: ty });
+      if (pathClean(p, rects)) return dedupe(p);
+    }
+
+    // 3) 兜底：原来的折中走法
     const midX = Math.round((sx + tx) / 2);
-    return [
-      { x: Math.round(sx), y: Math.round(sy) },
-      { x: midX, y: Math.round(sy) },
-      { x: midX, y: Math.round(ty) },
-      { x: Math.round(tx), y: Math.round(ty) }
-    ];
+    return dedupe([
+      { x: sx, y: sy },
+      { x: midX, y: sy },
+      { x: midX, y: ty },
+      { x: tx, y: ty }
+    ]);
   }
 
   // ---- 回边：外侧走廊 + 独立 lane ----
@@ -240,13 +310,13 @@ function computeWaypoints(flow, pos, laneIndex) {
 
   const startY = Math.round(s.y + s.h - 10);           // 从源右下角附近离开
   const endY = Math.round(t.y + t.h);                  // 从目标【下边】进入
-  return [
-    { x: Math.round(s.x + s.w), y: startY },
+  return dedupe([
+    { x: s.x + s.w, y: startY },
     { x: gutterX, y: startY },
     { x: gutterX, y: laneY },
-    { x: Math.round(t.cx), y: laneY },
-    { x: Math.round(t.cx), y: endY }
-  ];
+    { x: t.cx, y: laneY },
+    { x: t.cx, y: endY }
+  ]);
 }
 
 module.exports = { computeLayout, computeWaypoints, sizeOf, SIZES };
