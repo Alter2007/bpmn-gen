@@ -310,3 +310,144 @@ code {
 .clarify-opt .co-desc { font-size: 12px; color: var(--text-3); line-height: 1.5; }
 .clarify-hint { margin-top: 12px; font-size: 12px; color: var(--text-3); }
 .clarify-opt .co-hit { font-size: 11.5px; color: var(--text-2); background: var(--line-soft); border-radius: 6px; padding: 2px 8px; align-self: flex-start; margin-top: 2px; }
+
+/* ---------------- 使用帮助 ---------------- */
+.help-wrap {
+  display: grid;
+  grid-template-columns: 186px minmax(0, 1fr);
+  gap: 18px;
+  align-items: start;
+}
+
+.help-toc {
+  position: sticky;
+  top: 6px;
+  background: var(--card);
+  border: 1px solid var(--line);
+  border-radius: var(--radius);
+  padding: 10px 8px;
+}
+
+.help-toc-title {
+  font-size: 12px;
+  color: var(--text-3);
+  letter-spacing: .06em;
+  padding: 2px 9px 8px;
+}
+
+.help-toc-item {
+  display: block;
+  width: 100%;
+  text-align: left;
+  border: 0;
+  background: none;
+  padding: 7px 9px;
+  border-radius: 8px;
+  font-size: 13px;
+  line-height: 1.4;
+  color: var(--text-2);
+  cursor: pointer;
+  font-family: inherit;
+}
+
+.help-toc-item:hover { background: var(--line-soft); }
+.help-toc-item.active { background: #e8f3ff; color: #1668dc; font-weight: 600; }
+
+.help-main {
+  min-width: 0;
+  background: var(--card);
+  border: 1px solid var(--line);
+  border-radius: var(--radius);
+  padding: 22px 24px 16px;
+}
+
+.help-page { display: none; }
+.help-page.active { display: block; }
+.help-page h2 { margin: 0 0 12px; font-size: 18px; color: var(--text); }
+.help-page h3 { margin: 20px 0 8px; font-size: 14px; color: var(--text); }
+.help-page p { margin: 9px 0; font-size: 13.5px; line-height: 1.78; color: var(--text-2); }
+.help-page b { color: var(--text); }
+
+.help-ol, .help-ul {
+  margin: 8px 0 8px 22px;
+  padding: 0;
+  font-size: 13.5px;
+  line-height: 1.9;
+  color: var(--text-2);
+}
+
+.help-example {
+  display: flex;
+  gap: 12px;
+  align-items: center;
+  flex-wrap: wrap;
+  margin: 9px 0;
+  padding: 10px 12px;
+  background: var(--field);
+  border: 1px solid var(--line);
+  border-radius: 10px;
+}
+
+.help-example code {
+  flex: 1 1 240px;
+  font-size: 13px;
+  color: var(--text);
+  word-break: break-all;
+}
+
+.help-tip {
+  margin: 13px 0;
+  padding: 10px 13px;
+  background: #fffbe6;
+  border-left: 3px solid #fadb14;
+  border-radius: 6px;
+  font-size: 13px;
+  line-height: 1.75;
+  color: #614700;
+}
+
+.help-table {
+  width: 100%;
+  border-collapse: collapse;
+  margin: 11px 0;
+  font-size: 13px;
+}
+
+.help-table th,
+.help-table td {
+  border: 1px solid var(--line);
+  padding: 8px 10px;
+  text-align: left;
+  vertical-align: top;
+  color: var(--text-2);
+  line-height: 1.7;
+}
+
+.help-table th { background: var(--field); color: var(--text); font-weight: 600; }
+
+.help-table code,
+.help-page code {
+  background: var(--line-soft);
+  padding: 1px 5px;
+  border-radius: 4px;
+  font-size: 12.5px;
+  color: var(--text);
+}
+
+.help-pager {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 16px;
+  margin-top: 24px;
+  padding-top: 15px;
+  border-top: 1px solid var(--line);
+}
+
+.help-num {
+  font-size: 13px;
+  color: var(--text-3);
+  font-variant-numeric: tabular-nums;
+  min-width: 58px;
+  text-align: center;
+}

@@ -45,6 +45,10 @@
         <svg viewBox="0 0 24 24" width="17" height="17" fill="none" stroke="currentColor" stroke-width="1.8"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.7 1.7 0 0 0 .3 1.9l.1.1a2 2 0 1 1-2.8 2.8l-.1-.1a1.7 1.7 0 0 0-2.9 1.2V21a2 2 0 1 1-4 0v-.1A1.7 1.7 0 0 0 7 19.3l-.1.1a2 2 0 1 1-2.8-2.8l.1-.1A1.7 1.7 0 0 0 3 13.6H3a2 2 0 1 1 0-4h.1A1.7 1.7 0 0 0 4.7 7l-.1-.1a2 2 0 1 1 2.8-2.8L7.5 4A1.7 1.7 0 0 0 10 3.6V3a2 2 0 1 1 4 0v.1A1.7 1.7 0 0 0 17 4.7l.1-.1a2 2 0 1 1 2.8 2.8l-.1.1a1.7 1.7 0 0 0 1.2 2.9H21a2 2 0 1 1 0 4h-.1a1.7 1.7 0 0 0-1.5 1Z"/></svg>
         <span>设置</span>
       </a>
+      <a class="nav-item" data-view="help">
+        <svg viewBox="0 0 24 24" width="17" height="17" fill="none" stroke="currentColor" stroke-width="1.8"><circle cx="12" cy="12" r="9"/><path d="M9.5 9a2.5 2.5 0 1 1 3.6 2.24c-.8.42-1.1 1-1.1 1.76v.5"/><circle cx="12" cy="17" r="1" fill="currentColor" stroke="none"/></svg>
+        <span>使用帮助</span>
+      </a>
     </nav>
 
     <div class="side-foot">
@@ -211,6 +215,195 @@
         <div class="quit-row">
           <button class="btn btn-ghost" id="btn-quit">退出应用</button>
           <span class="quit-hint">退出后本地服务停止，可直接关闭窗口</span>
+        </div>
+      </div>
+    </section>
+
+    <section class="view" id="view-help">
+      <div class="page-head">
+        <h1>使用帮助</h1>
+        <p>按主题分页讲解每个功能，每页都配可直接试的示例；点左侧目录可跳到任意页</p>
+      </div>
+
+      <div class="help-wrap">
+        <aside class="help-toc">
+          <div class="help-toc-title">目录</div>
+          <div id="help-toc-list"></div>
+        </aside>
+
+        <div class="help-main">
+          <div id="help-pages">
+
+            <article class="help-page active" data-title="快速开始">
+              <h2>快速开始（三步）</h2>
+              <ol class="help-ol">
+                <li>左侧点「生成」，在输入框里用一句中文描述审批场景；</li>
+                <li>右边出现流程图，滚轮缩放、拖动平移；</li>
+                <li>满意后点「下载 .bpmn」，导入 Flowable / Camunda / bpmn-js 即可用。</li>
+              </ol>
+              <div class="help-tip">如果还没配 API Key，用顶部的「仅用模板（不联网）」也能生成，只是句子要和模板用词接近一些。</div>
+              <h3>可以直接照着输入</h3>
+              <div class="help-example"><code>差旅报销，金额小于1000主管批，超过5000需要财务复核</code><button class="btn btn-ghost btn-try" data-try="差旅报销，金额小于1000主管批，超过5000需要财务复核">填入这句试试</button></div>
+              <div class="help-example"><code>多人会签，全部签完才通过</code><button class="btn btn-ghost btn-try" data-try="多人会签，全部签完才通过">填入这句试试</button></div>
+              <div class="help-example"><code>审批超时3天没处理就自动升级</code><button class="btn btn-ghost btn-try" data-try="审批超时3天没处理就自动升级">填入这句试试</button></div>
+            </article>
+
+            <article class="help-page" data-title="两种生成模式">
+              <h2>两种生成模式</h2>
+              <p>顶部有两个标签页，区别只在「怎么理解你那句话」，生成 XML 的代码是同一套。</p>
+              <table class="help-table">
+                <tr><th>模式</th><th>怎么工作</th><th>前提</th><th>速度</th></tr>
+                <tr>
+                  <td><b>自然语言生成</b></td>
+                  <td>大模型只输出一个极小的 JSON（选哪个模板 + 几个参数 + 置信度），XML 由确定性代码生成</td>
+                  <td>需要 API Key（在「设置」里粘贴）</td>
+                  <td>1～4 秒</td>
+                </tr>
+                <tr>
+                  <td><b>仅用模板（不联网）</b></td>
+                  <td>本地关键词打分，直接命中模板</td>
+                  <td>不需要 Key</td>
+                  <td>毫秒级</td>
+                </tr>
+              </table>
+              <div class="help-tip">两种模式产出的文件逐字节一致 —— 模型从不写 XML，所以不存在「生成的 XML 语法错」这种问题。</div>
+              <h3>为什么不让模型直接写 XML</h3>
+              <p>模型的自由度放在「理解意图」上，语法层面的正确性由代码保证。这是本项目最核心的设计取舍。</p>
+            </article>
+
+            <article class="help-page" data-title="条件分级">
+              <h2>按金额 / 天数自动分级</h2>
+              <p>一句话里说出阈值，就会生成对应的排他网关和分支，阈值从话里抽出来。</p>
+              <div class="help-example"><code>差旅报销，金额小于1000主管批，超过5000需要财务复核</code><button class="btn btn-ghost btn-try" data-try="差旅报销，金额小于1000主管批，超过5000需要财务复核">填入这句试试</button></div>
+              <p>会生成三条分支：</p>
+              <table class="help-table">
+                <tr><th>条件</th><th>去向</th></tr>
+                <tr><td><code>amount &lt;= 1000</code></td><td>主管审批</td></tr>
+                <tr><td><code>amount &gt; 1000 &amp;&amp; amount &lt;= 5000</code></td><td>总监审批</td></tr>
+                <tr><td>其余（默认流）</td><td>财务复核</td></tr>
+              </table>
+              <h3>天数也能分级</h3>
+              <div class="help-example"><code>请假3天以内主管批，超过7天人事批</code><button class="btn btn-ghost btn-try" data-try="请假3天以内主管批，超过7天人事批">填入这句试试</button></div>
+              <div class="help-tip">阈值支持阿拉伯数字和「万」（例如「超过10万」会解析成 100000）。如果某个数字没能识别，生成结束时会有黄色提示告诉你用了默认值 —— 不会悄悄替换。</div>
+            </article>
+
+            <article class="help-page" data-title="驳回与退回">
+              <h2>审批驳回 / 退回</h2>
+              <p>凡是有审批节点的流程，都自带驳回能力：审批人点「不通过」，单子退回发起人重新走。</p>
+              <h3>技术上是怎么做的</h3>
+              <p>用 BPMN 的<b>回边</b>实现，不是画个圈糊弄：</p>
+              <ul class="help-ul">
+                <li>「通过」= 默认流（default flow），条件全不满足时走它；</li>
+                <li>「驳回」= 带条件 <code>execution.getVariable('approved') == false</code> 的流，指回发起节点。</li>
+              </ul>
+              <div class="help-tip">驳回后流程不会自己结束，而是回到前面重走 —— 这正是真实审批的行为。图上那条向左的箭头就是驳回路径。</div>
+              <h3>看效果</h3>
+              <p>生成流程后点「下载说明」，文档里有一节「驳回 / 退回路径」，会列出每条回边的来源、去向和条件。</p>
+            </article>
+
+            <article class="help-page" data-title="会签与或签">
+              <h2>会签（全部签完） / 或签（一人即可）</h2>
+              <p>用 BPMN 的多实例任务实现，<b>人数不写死在流程里</b>。</p>
+              <div class="help-example"><code>多人会签，全部签完才通过</code><button class="btn btn-ghost btn-try" data-try="多人会签，全部签完才通过">填入这句试试</button></div>
+              <div class="help-example"><code>或签，任意一人处理即可</code><button class="btn btn-ghost btn-try" data-try="或签，任意一人处理即可">填入这句试试</button></div>
+              <table class="help-table">
+                <tr><th>类型</th><th>BPMN 写法</th><th>行为</th></tr>
+                <tr><td><b>会签</b></td><td>多实例，无完成条件</td><td>approvers 里有几个人就签几次，全签完才继续</td></tr>
+                <tr><td><b>或签</b></td><td>多实例 + <code>nrOfCompletedInstances &gt;= 1</code></td><td>任意一人签完，整个任务立即通过</td></tr>
+              </table>
+              <div class="help-tip">人数由流程变量 <code>approvers</code> 列表长度决定：传 3 个人是三人会签，传 5 个是五人。业务上换人增人只改数据，不用重新建模。</div>
+            </article>
+
+            <article class="help-page" data-title="超时催办">
+              <h2>超时催办 / 自动升级</h2>
+              <p>给审批任务挂一个<b>边界定时器</b>：到点还没处理，自动转到升级分支。</p>
+              <div class="help-example"><code>审批超时3天没处理就自动升级</code><button class="btn btn-ghost btn-try" data-try="审批超时3天没处理就自动升级">填入这句试试</button></div>
+              <p>生成的结果里，主管审批节点的右下角会多一个小圆圈（边界事件），超时后走到「上级审批」。</p>
+              <table class="help-table">
+                <tr><th>你说</th><th>定时器</th></tr>
+                <tr><td>3 天没处理</td><td><code>P3D</code></td></tr>
+                <tr><td>8 小时</td><td><code>PT8H</code></td></tr>
+              </table>
+              <div class="help-tip">超时后原任务会被取消（cancelActivity=true），避免两个人同时处理同一张单子。</div>
+            </article>
+
+            <article class="help-page" data-title="交互式澄清">
+              <h2>拿不准就先问，不硬生成</h2>
+              <p>两种情况下应用不会直接出图，而是把候选模板摆出来让你点：</p>
+              <ul class="help-ul">
+                <li>关键词得分太低（低于 4 分），或与第二名差距不足 2 分；</li>
+                <li>大模型返回的置信度低于 0.7。</li>
+              </ul>
+              <p>候选卡片会显示「识别到：」命中了哪些关键词，帮你判断它为什么这么猜。点一下即生成。</p>
+              <div class="help-tip">命令行版没有交互上下文，所以会打印候选清单，再用 <code>--template 模板id</code> 重跑一次。</div>
+            </article>
+
+            <article class="help-page" data-title="配套产物">
+              <h2>除了 XML，还产出三样东西</h2>
+              <table class="help-table">
+                <tr><th>产物</th><th>内容</th><th>给谁看</th></tr>
+                <tr><td><b>流程说明书</b>（Markdown）</td><td>节点表、分支条件表、驳回路径、校验声明</td><td>评审 / 交接 / 存档</td></tr>
+                <tr><td><b>表单定义</b>（JSON）</td><td>发起人要填的字段、类型、是否必填</td><td>前端页面开发</td></tr>
+                <tr><td><b>分支覆盖用例</b>（JSON）</td><td>每个分支一组输入样例 + 预期去向</td><td>测试同学</td></tr>
+              </table>
+              <p>界面上对应「下载说明」「下载表单」两个按钮；命令行加 <code>--artifacts</code> 会一次落三个文件。</p>
+              <div class="help-tip">用例里的样例值是算出来的：上界条件取「阈值 − 1」，区间取「下界 + 1」，默认流取「最大阈值 + 1」。所以拿来就能跑。</div>
+            </article>
+
+            <article class="help-page" data-title="下载与导出">
+              <h2>四种带走的格式</h2>
+              <table class="help-table">
+                <tr><th>按钮</th><th>格式</th><th>用途</th></tr>
+                <tr><td><b>下载 .bpmn</b></td><td>BPMN 2.0 XML</td><td>导入 Flowable / Camunda，或给 bpmn-js 渲染</td></tr>
+                <tr><td><b>下载 SVG</b></td><td>矢量图</td><td>放进文档、PPT，放大不糊</td></tr>
+                <tr><td><b>下载说明</b></td><td>Markdown</td><td>人工阅读、代码仓库存档</td></tr>
+                <tr><td><b>下载表单</b></td><td>JSON</td><td>前端表单渲染</td></tr>
+              </table>
+              <p>还有「复制 XML」，方便直接贴到别处。</p>
+              <div class="help-tip">命令行也能出 SVG：<code>bpmn2svg.cmd 你的流程.bpmn</code> —— 不需要浏览器，直接读 BPMN 里的坐标画图。</div>
+            </article>
+
+            <article class="help-page" data-title="模板库">
+              <h2>模板库怎么用</h2>
+              <p>左侧「模板库」列出全部模板，含编号、名称、适用场景、关键词。想稳定命中某个模板，句子用它的关键词即可。</p>
+              <h3>模板是纯 JSON，可以自己加</h3>
+              <p>一个模板就是一个文件，放在 <code>src/templates/</code>，包含：节点、连线、变量、关键词、槽位。加完重启应用即可出现在模板库里，不需要改任何代码。</p>
+              <div class="help-tip">模板里的槽位写成 <code>@tier1@</code> 这种占位符，生成时替换成从你话里抽出来的数字。</div>
+            </article>
+
+            <article class="help-page" data-title="命令行用法">
+              <h2>命令行版（同功能）</h2>
+              <p>界面和命令行共用同一套内核，产物逐字节一致。</p>
+              <table class="help-table">
+                <tr><th>命令</th><th>作用</th></tr>
+                <tr><td><code>nl2bpmn.cmd --list</code></td><td>列出全部模板</td></tr>
+                <tr><td><code>nl2bpmn.cmd "差旅报销..." -o out.bpmn</code></td><td>生成并输出</td></tr>
+                <tr><td><code>nl2bpmn.cmd "..." -o out.bpmn --artifacts</code></td><td>同时产出说明 / 表单 / 用例</td></tr>
+                <tr><td><code>nl2bpmn.cmd "..." --template amount_tiered</code></td><td>指定模板，跳过关键词猜测</td></tr>
+                <tr><td><code>bpmn2svg.cmd out.bpmn</code></td><td>把 BPMN 渲染成 SVG</td></tr>
+                <tr><td><code>verify-all.cmd</code></td><td>跑完整六层验证</td></tr>
+              </table>
+            </article>
+
+            <article class="help-page" data-title="常见问题">
+              <h2>常见问题</h2>
+              <h3>它说「把握不大」，让我选模板？</h3>
+              <p>说明你这句话和模板的关键词重合度不够。点候选里的任意一个即可；或者把句子改成模板描述里的说法。</p>
+              <h3>生成的分支和我说的话不一致？</h3>
+              <p>先看生成结果下方的黄色提示——阈值没识别出来、分支数超过模板能力，都会在那里说明，不会悄悄替换。</p>
+              <h3>能直接部署到引擎吗？</h3>
+              <p>目前产出标准 BPMN 2.0 文件，导入 Flowable / Camunda 即可部署；应用本身不直连引擎。</p>
+              <h3>生成的文件能过校验吗？</h3>
+              <p>每个模板都要通过六层验证：良构 → IR 契约 → 图论 → OMG 官方 XSD → bpmn-moddle → Flowable 引擎实跑。</p>
+            </article>
+
+          </div>
+
+          <div class="help-pager">
+            <button class="btn btn-ghost" id="help-prev">← 上一页</button>
+            <span class="help-num" id="help-num">1 / 11</span>
+            <button class="btn btn-ghost" id="help-next">下一页 →</button>
+          </div>
         </div>
       </div>
     </section>

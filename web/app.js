@@ -109,6 +109,70 @@
     });
   });
 
+  // ---------------- 使用帮助（分页 + 目录定位） ----------------
+  var helpEls = {
+    pages: document.querySelectorAll('#help-pages .help-page'),
+    toc: $('help-toc-list'),
+    prev: $('help-prev'),
+    next: $('help-next'),
+    num: $('help-num')
+  };
+  var helpIndex = 0;
+
+  function helpShow(index) {
+    var n = helpEls.pages.length;
+    if (n === 0) return;
+    if (index < 0) index = 0;
+    if (index > n - 1) index = n - 1;
+    helpIndex = index;
+    for (var i = 0; i < n; i++) {
+      helpEls.pages[i].classList.toggle('active', i === index);
+    }
+    var items = helpEls.toc ? helpEls.toc.querySelectorAll('.help-toc-item') : [];
+    for (var j = 0; j < items.length; j++) {
+      items[j].classList.toggle('active', j === index);
+    }
+    if (helpEls.num) helpEls.num.textContent = (index + 1) + ' / ' + n;
+    if (helpEls.prev) helpEls.prev.disabled = index === 0;
+    if (helpEls.next) helpEls.next.disabled = index === n - 1;
+  }
+
+  (function buildHelpToc() {
+    if (!helpEls.toc) return;
+    var n = helpEls.pages.length;
+    for (var i = 0; i < n; i++) {
+      (function (idx) {
+        var title = helpEls.pages[idx].getAttribute('data-title') || ('第 ' + (idx + 1) + ' 页');
+        var b = document.createElement('button');
+        b.className = 'help-toc-item';
+        b.type = 'button';
+        b.textContent = (idx + 1) + '. ' + title;
+        b.addEventListener('click', function () { helpShow(idx); });
+        helpEls.toc.appendChild(b);
+      })(i);
+    }
+    helpShow(0);
+  })();
+
+  if (helpEls.prev) {
+    helpEls.prev.addEventListener('click', function () { helpShow(helpIndex - 1); });
+  }
+  if (helpEls.next) {
+    helpEls.next.addEventListener('click', function () { helpShow(helpIndex + 1); });
+  }
+
+  // 帮助页里的「填入这句试试」：填到输入框并跳到生成页
+  document.querySelectorAll('.btn-try').forEach(function (btn) {
+    btn.addEventListener('click', function () {
+      var text = btn.getAttribute('data-try') || '';
+      if (els.desc) {
+        els.desc.value = text;
+        els.desc.focus();
+      }
+      var navGen = document.querySelector('.nav-item[data-view="generate"]');
+      if (navGen) navGen.click();
+    });
+  });
   // ---------------- 健康状态 ----------------
   function renderKey(k, h) {
     var has = !!(k && k.hasKey);
