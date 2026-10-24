@@ -1,503 +1,183 @@
-# bpmn-gen：自然语言 → BPMN 2.0（Flowable）审批流生成器
+# bpmn-gen：把一句大白话变成能直接跑起来的审批流
 
 [![verify](https://github.com/Alter2007/bpmn-gen/actions/workflows/verify.yml/badge.svg)](https://github.com/Alter2007/bpmn-gen/actions/workflows/verify.yml)
 
-**当前阶段：S0 契约 + S1 内核 + S2 修复 + S3 自然语言/大模型 + L2 官方 XSD 校验 + L4 实例运行（核心零依赖，无需 `npm install`）**
+> **一句话**：业务人员用中文说一遍审批规则，工具直接生成一个**能被 Flowable / Camunda 直接部署**的 BPMN 文件 —— 不用写代码，也不用去求 IT。
 
-**演示视频**：[B 站 · BV1FvHA6YEyP](https://www.bilibili.com/video/BV1FvHA6YEyP/) —— P1 大模型版（2:14）/ P2 离线模式（2:38）
-（视频录制于 `30b4f85`，展示的是**形态 ① 命令行版**；仓库当前还包含形态 ② 桌面应用版）
+---
 
-**一条命令复现全部验证**：`verify-all.cmd` → 六层全绿（318 项断言 / XSD 66 文件 / 引擎校验 66/66 / 实例 113 条 + 覆盖 100 条）
+## 这个项目解决什么问题（大白话）
 
-核心设计思想：**绝不让大模型直接产出 XML**。模型只产出结构化 IR，XML 由确定性代码生成——这样命名空间、id、坐标、标签闭合在物理上就不可能出错。
+企业或政府里的日常办公，如果财务、行政想要一个「报销审批流」，通常要走这么一圈：
 
 ```
-自然语言 ──(大模型：只出模板+槽位)──> IR(JSON) ──> 校验 ──> 序列化 ──> BPMN XML (含 DI)
-                                             L0/L3      确定性        L1
+业务人员 → 提需求 → IT 部门 → 程序员开发 → 反复确认 → 上线
 ```
 
-> **本仓库有两种形态，别搞混**：
-> **① 命令行版**（⭐ 演示视频展示的就是这一版）｜**② 桌面应用版**（视频之后新增）。
-> 两者共用同一套内核，产出的 BPMN 逐字节一致。详见 [两种形态](#两种形态重要先看这里)。
+问题是：**业务人员不懂代码，程序员不懂业务**。一句话就能说完的规则（"1000 以内主管批，超过 5000 财务复核"），往往要来回沟通好几轮，周期以周计。
 
-## 快速开始
+这个工具就是为了让业务人员**自己动手**，把这句话直接变成系统能跑的配置，把中间的沟通成本干掉。
+
+典型场景：公文流转、报销、采购、用章、请假、合同会签、投诉信访……凡是「谁在什么条件下审什么」的流程，都适用。
+
+## 它是怎么工作的（三步）
+
+| 步骤 | 你做什么 | 系统做什么 |
+|---|---|---|
+| **① 说人话** | 输入：`我要做一个差旅报销审批流，金额小于1000直接主管批，超过5000需要财务复核` | 解析关键词，选出最匹配的模板 |
+| **② 翻译意图** | —— | 大模型**只输出一个极小的 JSON**（模板 id + 几个参数 + 置信度）；**BPMN XML 由确定性代码生成** |
+| **③ 直接运行** | 下载 `.bpmn`，扔进 Flowable / Camunda | 引擎部署即跑，不需要再改 |
+
+> **关键设计**：模型从不写 XML。它的自由度被限制在「理解你说的是哪一类流程、阈值是多少」这一层；语法正确性由代码保证。
+> 所以**不会出现"AI 生成的 XML 语法错误"这种事** —— 这类错误在物理上不可能发生。
+
+## 这是什么方向的产品
+
+| 方向 | 我们处在什么位置 |
+|---|---|
+| **低代码 / 无代码** | ✅ 不用画图、也不用写代码，一句话就行；比拖拽式 BPMN 设计器快得多 |
+| **AI 开发工具链** | ✅ AI 负责「意图 → 配置」的翻译，而不是负责生成语法 |
+| **行业应用平台（政务 / 企业）** | ✅ 28 个模板覆盖公文、投诉、报销、采购、用章、请假、会签、超时催办等真实场景 |
+
+## 30 秒上手
 
 ```bat
-:: 0) 一句话直接出图（离线，不需要任何 API Key）
-nl2bpmn.cmd "我要做一个差旅报销审批流，金额小于1000主管批，超过5000财务复核" -o travel.bpmn
+:: 形态 ①  命令行：零依赖，只要 Node ≥ 18
+nl2bpmn.cmd "差旅报销，金额小于1000主管批，超过5000需要财务复核" -o out.bpmn
 
-:: 看看有哪些模板
-nl2bpmn.cmd --list
-
-:: 1) 有 IR 的话，直接生成
-bpmn-gen.cmd test\cases\travel-expense.json -o travel.bpmn
-
-:: 2) 脏 IR 自动修复
-bpmn-gen.cmd test\cases-repairable\dirty.json --repair --verbose -o fixed.bpmn
-
-:: 3) 只看 XML 不写文件
-bpmn-gen.cmd test\cases\leave-request.json --stdout
-
-:: 4) 跑全部测试（正向 2 / 反向 1 / 可修复 1 / 自然语言 8）
-node test\run.js
+:: 形态 ②  桌面应用：双击图标，界面上填一句话
+创建桌面快捷方式.cmd     :: 只需运行一次
 ```
 
-## 两种形态（重要：先看这里）
+## 两种形态（同一个内核，两个外壳）
 
-本仓库包含**同一引擎的两种形态**。演示视频里展示的是**形态 ①**；形态 ② 是视频之后新增的增强外壳。
+本仓库包含**同一引擎的两种用法**。演示视频展示的是**形态 ①**；形态 ② 是视频之后新增的增强外壳。
 
 | | **形态 ① · 命令行版**<br>（⭐ 演示视频展示的就是这一版） | **形态 ② · 桌面应用版**<br>（视频之后新增） |
 |---|---|---|
-| 对应提交 | `30b4f85` 及之前 | `4743c8a` 之后（当前 `main`） |
 | 怎么打开 | 终端里跑 `demo.cmd` | **双击桌面图标** |
 | 要不要命令行 | **要** | **不要** |
-| **要不要装依赖** | **不需要**（零依赖，只要 Node ≥ 18） | **要装一次**：`cd web && npm install`（装 bpmn-js） |
-| **怎么生成一句话流程** | `nl2bpmn.cmd "差旅报销，金额小于1000主管批…" -o out.bpmn` | 输入框写一句话 → 点「生成」 |
-| **怎么看流程图** | `bpmn2svg.cmd out.bpmn` 出矢量图（不开浏览器） | 右侧直接渲染，滚轮缩放、拖动平移 |
-| **配套产物** | `--artifacts` 一次落三个文件 | 「下载说明」「下载表单」「下载 SVG」按钮 |
-| **帮助在哪** | `nl2bpmn.cmd --list`（模板清单）/ `--help` | 左侧「使用帮助」（13 页，可翻页定位） |
-| **适合谁** | 写脚本、接 CI、批量生成、嵌自动化 | 演示、给业务人员用、现场讲解 |
-| Key 从哪来 | `dev-shell.cmd -WithKey` 或环境变量 | 界面「设置」页**直接粘贴** |
-| 窗口形态 | 普通浏览器标签页 | 无地址栏、无标签页的应用窗口 |
-| 关闭之后 | 手动 `Ctrl+C` | 约 35 秒服务自动退出，Key 随之消失 |
-| 涉及文件 | `demo.cmd`、`dev-shell.cmd` | `创建桌面快捷方式.cmd`、`启动应用.vbs`、`停止应用.vbs` |
-| 是否出现在视频里 | **是** | 否 |
+| 要不要装依赖 | **不需要**（零依赖，只要 Node ≥ 18） | **要装一次**：`cd web && npm install` |
+| 怎么生成 | `nl2bpmn.cmd "…" -o out.bpmn` | 输入一句话 → 点「生成」 |
+| 怎么看流程图 | `bpmn2svg.cmd out.bpmn` 出矢量图 | 右侧直接渲染，可缩放拖动 |
+| 配套产物 | `--artifacts` 一次落三个文件 | 三个下载按钮 |
+| 帮助在哪 | `nl2bpmn.cmd --list` / `--help` | 左侧「使用帮助」（13 页） |
+| 适合谁 | 写脚本、接 CI、批量生成 | 演示、给业务人员用、现场讲解 |
 
 > **一句话选**：要**批量 / 自动化**用形态 ①；要**给人看 / 演示**用形态 ②。
+>
+> 两者共用同一套 `src/` 内核与同一套六层校验，**产出的 BPMN 逐字节一致**。
 
-> **两者共用同一套 `src/` 生成内核与同一套六层校验，产出的 BPMN 逐字节一致。**
-> 差别只在"外壳"：① 你自己开服务、自己开浏览器；② 一个 VBS 静默拉起服务并打开应用样式窗口。
-
-### 想精确复现视频里的版本
+<details>
+<summary>想精确复现演示视频里的版本（点开）</summary>
 
 ```bat
 git checkout 30b4f85
 demo.cmd
 ```
 
-看完可以 `git checkout main` 回到最新版。
-
----
-
-### 形态 ① · 命令行版（⭐ 视频演示 / 比赛提交对应这一版）
-
-```bat
-:: 启动服务并自动打开浏览器（默认 8099）
-demo.cmd
-
-:: 换端口
-node web\serve.js 8100
-```
-
-Key 有两种给法：
-
-```bat
-:: ① 交互式录入（推荐：Key 不进命令历史、不落盘）
-dev-shell.cmd -WithKey
-
-:: ② 自己设环境变量
-set DEEPSEEK_API_KEY=sk-...
-```
-
-没设 Key 也能用——侧栏显示「无密钥(仅模板)」，生成自动退回离线模板匹配。
-
-**命令行一次拿全套产物**（与界面里「下载说明 / 下载表单」同源）：
-
-```bat
-nl2bpmn.cmd "差旅报销，金额小于1000主管批，超过5000财务复核" -o travel.bpmn --artifacts
-:: 生成 4 个文件：
-::   travel.bpmn          流程定义
-::   travel-说明.md        流程说明书（节点表 / 分支条件 / 驳回路径）
-::   travel-表单.json      表单字段定义
-::   travel-用例.json      分支覆盖用例
-```
-
-**命令行遇到"把握不大"的输入**时，会把候选和可用的 `--template` 一起打出来：
-
-```
-[提示] 这句话把握不大（第一名仅 2 分）。如果生成结果不对，可以指定模板重跑：
-       --template amount_tiered          命中: 报销
-       --template expense_reimburse      命中: 报销
-```
-
-### 形态 ② · 桌面应用版（视频之后新增）
-
-**第一次用（只需一次）**：双击 `创建桌面快捷方式.cmd` → 桌面出现「BPMN 生成器」图标。
-（`.lnk` 含本机绝对路径，所以不进仓库；这个脚本是**现场生成**快捷方式的，克隆下来也能用。）
-
-**以后每次**：双击桌面图标，会发生两件事：
-
-1. 后台**静默启动服务**（不弹黑窗口）
-2. 打开一个**无地址栏、无标签页**的窗口 —— 看起来就是个桌面软件
-
-然后：左侧「设置」→ 粘贴 `sk-…` 开头的密钥 → 保存 → 侧栏变绿点「已就绪」→ 回「生成」页开始用。
-
-| 文件 | 作用 |
-|---|---|
-| `创建桌面快捷方式.cmd` | 在桌面生成快捷方式（只需一次） |
-| `启动应用.vbs` | 静默起服务 + 开应用窗口；**会先结束上一次的残留进程**，保证干净启动 |
-| `停止应用.vbs` | 停止本地服务 |
-
-> 关掉窗口后约 35 秒，服务和内存里的 Key 会一起消失，下次打开是干净状态。
-> 这是有意设计的——避免残留进程一直占着旧密钥。
-
----
-
-### 两种形态共同的界面
-
-| 页面 | 内容 |
-|---|---|
-| 生成 | 输入一句话 → 生成 → 可视化 → 下载 .bpmn / 复制 XML |
-| 模板库 | 28 个模板的 ID、说明、关键词、节点/连线规模 |
-| 验证报告 | 六层验证结果（含 L4 实例运行） |
-| 设置 | 粘贴 API Key（仅形态 ②）、供应商、模型、接口地址、计数、退出应用 |
-
-**密钥安全**：界面粘贴的密钥只进进程内存，不写文件、不写日志、不进命令历史；
-接口只返回掩码（`sk-ab…wxyz`），服务端日志只打长度。服务只监听 `127.0.0.1`，局域网无法访问。
-
-服务前台运行：不注册系统服务、不建数据库、不写注册表；生成逻辑是同进程 `require` 核心模块完成的，
-不 spawn 子进程（P-04 不破例）。
+看完 `git checkout main` 回到最新版。
+</details>
 
 ## 生成效果（真实输出，非示意图）
 
-下面两张图都是 `nl2bpmn.cmd` 的**实际产物**渲染而来（`scripts/bpmn2svg.js` 直接读 BPMN 的 DI 坐标，不依赖浏览器）。
+两张图都是 `nl2bpmn` 的**实际产物**渲染而来（`scripts/bpmn2svg.js` 直接读 BPMN 的 DI 坐标，不依赖浏览器）。
 
-**① 金额分级 + 三条驳回**（「差旅报销，金额小于1000主管批，超过5000财务复核」）：
+**① 金额分级 + 三条驳回**（"差旅报销，金额小于1000主管批，超过5000财务复核"）：
 
 ![金额分级审批流](docs/images/flow-travel-reject.svg)
 
-**② 多人会签**（「多人会签，全部签完才通过」——人数由 `approvers` 列表长度决定）：
+**② 多人会签**（"多人会签，全部签完才通过"——人数由 `approvers` 列表长度决定，不写死在流程里）：
 
 ![多人会签流程](docs/images/flow-multi-sign.svg)
 
-> 图里的「驳回」就是回边：审批人可以退回发起人重走。这正是很多模板生成工具做不出来的部分。
+## 能力清单（两种形态都支持）
 
-## 能力清单（P0 四项已实现，**两种形态都支持**）
-
-| 能力 | 说明 | 形态② 桌面应用 | 形态① 命令行 |
-|---|---|---|---|
-| **审批驳回 / 退回** | 审批人可把单子退回发起人重走。用 BPMN 回边实现：通过 = 默认流，驳回 = `approved == false` | ✅ 图上直接可见 | ✅ 生成的 XML 自带 |
-| **会签 / 或签（人数可配）** | 多实例任务：**会签** = `approvers` 里的人全部签完才继续；**或签** = 任意一人签完即通过（`completionCondition: nrOfCompletedInstances >= 1`）。**人数不写死在流程里**——传 3 个人就是三人会签，传 5 个就是五人 | ✅ 模板库选「多人会签 / 或签」 | ✅ 同上，`--list` 可见 |
-| **超时催办（边界定时器）** | 任务挂 `boundaryEvent` + `timerEventDefinition`，超时未处理自动转到升级分支；时长可参数化（`P@timeoutDays@D`，说"3 天"就是 P3D） | ✅ 模板库「审批超时升级」 | ✅ 同上 |
-| **28 个模板** | 企业类：金额分级、请假、采购、合同会签与终止、入职、用章、费用报销、单级审批、项目立项、加班、预算调整、供应商准入、IT 权限、离职、培训、出差、借款、固定资产、用车；政务类：公文签发、投诉信访、特殊事项、发票查验、会议审批；协作类：多人会签、或签 | ✅ 「模板库」页 | ✅ `nl2bpmn.cmd --list` |
-| **每个模板都带真实分支** | 28 个模板里**没有一个只是"提交→审批→结束"的直线**：25 个含排他网关（金额/天数分级、是否出境/涉密/急件/生产环境……），2 个会签/或签，1 个超时边界事件。分支条件都在 L4 实例运行里被逐条走到 | ✅ 图上可见 | ✅ 同上 |
-| **中文数字与单位** | `五千`→5000、`两万`→20000、`一万五`→15000、`10万`→100000；量词分强弱，`做一个流程` 不会被当成数字 1 | ✅ 同一套解析 | ✅ 同上 |
-| **生成提示（不静默替换）** | 阈值没认出来、或你说的档位比模板能放的多，都会**明确告诉你用了什么代替**，不会悄悄用默认值 | ✅ 结果下方黄色提示条 | ✅ 控制台「警告 N 条」 |
-| **交互式澄清** | 关键词把握不大（得分 < 4，或与第二名差距 < 2）或模型置信度 < 0.7 时**不硬生成**，先摆候选 | ✅ 候选卡片，点一下即生成 | ✅ 打印候选清单 + `--template` 重跑 |
-| **配套产物** | 表单定义（JSON）、流程说明书（Markdown，含分支条件表与驳回段）、分支覆盖用例 | ✅「下载说明」「下载表单」按钮 | ✅ `--artifacts` 落三个文件 |
-| **使用帮助** | 应用内 13 页帮助：左侧目录点击定位、底部页码翻页、每页示例可一键填入生成框 | ✅ 左侧导航「使用帮助」 | — （命令行用 `--help` / `--list`） |
-
-> 会签人员是**流程变量**（`approvers` 列表），不是建模时写死的人数：
-> 业务上换人、增人只需改数据，不用重新建模。L4 实例测试验证了「3 人会签签 3 次、2 人会签签 2 次、或签只签 1 次」。
-
-> 两种形态共用同一套 `src/`（含 `artifacts.js`），所以**产物逐字节一致**——命令行生成的和界面里下载的是同一份。
-> 唯一区别是「澄清」的交互方式：界面是点选，命令行是打印候选后让你带 `--template` 重跑（命令行没有交互上下文）。
-
-> 驳回的工程量主要在三处：布局要给回边绕行（否则层深发散到百万像素）、修复器不能再删任务上的默认流、
-> 引擎要求条件变量必须存在（`${approved == false}` 会抛异常，得写成 `execution.getVariable('approved')`）。
-
-## 自然语言直接生成（S3，离线）
-
-`nl2bpmn` 把一句话变成 BPMN，全程不联网、不调 API：
-
-```
-业务描述 ──① 关键词加权匹配──> 模板 ──② 抽取数字/名词──> 槽位 ──③ 渲染──> IR ──④ 管线──> BPMN
-```
-
-匹配打分 = **关键词长度 × 出现次数**（不是简单的"出现过就算"，所以"采购"出现两次会压过"部门"出现一次）。
-
-### 内置 28 个模板
-
-> 28 个模板**没有一个只是提交→审批→结束的直线**：25 个含排他网关（金额/天数/是否类业务条件），2 个会签/或签，1 个超时边界事件。每条分支都对应真实业务规则，并在 L4 实例运行里被逐条走到。
-
-| 模板 | 适用 | 结构 | 可参数化 |
-|---|---|---|---|
-| `amount_tiered` | 金额分级审批 | 排他网关三分支 | 两档阈值、变量名 |
-| `leave_days` | 请假天数审批 | 排他网关两分支 | 免升级天数 |
-| `expense_reimburse` | 费用报销串行 | 线性四步 | — |
-| `purchase_request` | 采购申请分级 | 排他网关三分支 | 两档阈值 |
-| `contract_review` | 合同并行会签 | 并行网关汇合 | — |
-| `onboarding_parallel` | 入职办理 | 并行网关汇合 | — |
-| `seal_apply` | 用章申请 | 线性三步 | — |
-| `simple_approval` | 单级审批 | 线性 | 审批人 |
-
-### 实测
-
-输入需求文档里的原句：
-
-> 我要做一个差旅报销审批流，金额小于1000直接主管批，大于1000需要总监批，超过5000需要财务复核
-
-输出（模板得分 14，自动提取 `tier1=1000, tier2=5000`）：
-
-```xml
-<bpmn:exclusiveGateway id="Gateway_1" name="报销金额判断" default="Flow_5">
-<bpmn:sequenceFlow id="Flow_3" name="≤1000" ...>
-  <bpmn:conditionExpression><![CDATA[${amount <= 1000}]]></bpmn:conditionExpression>
-<bpmn:sequenceFlow id="Flow_4" name="1000~5000" ...>
-  <bpmn:conditionExpression><![CDATA[${amount > 1000 && amount <= 5000}]]></bpmn:conditionExpression>
-```
-
-### 为什么"先模板、后大模型"
-
-这是本项目的关键取舍：
-
-| 做法 | 一次成功率 | 可预测性 | 演示稳定性 |
-|---|---|---|---|
-| 纯大模型自由生成 IR | 中 | 低（每次不同） | 有风险 |
-| **模板匹配 + 槽位填充** | **高** | **高**（确定性） | **稳** |
-| 大模型只负责"选模板 + 填槽位"（S3 下一步） | 最高 | 高 | 稳 |
-
-离线模板已经能覆盖典型审批流场景，**没有 Key 也能演示完整链路**；接入大模型后，它只做"选模板 + 填参数"这一件小事，出错面被压到最小。
-
-用户产物默认写到 `.data\out\`（你生成的流程）；验证产物单独写到 `.data\verify\`，两者不混——所以应用里「我的流程」只列你自己生成的。
-
-## 大模型通道（S3，需要 Key）
-
-### 供应商：默认 DeepSeek，可一键切百炼
-
-| 供应商 | 接口 | 默认模型 | Key 变量 | 控制台 |
-|---|---|---|---|---|
-| **deepseek**（默认） | `https://api.deepseek.com` | `deepseek-flash` | `DEEPSEEK_API_KEY` | [platform.deepseek.com/api_keys](https://platform.deepseek.com/api_keys) |
-| dashscope | `.../compatible-mode/v1` | `qwen-plus` | `DASHSCOPE_API_KEY` | [bailian.console.aliyun.com](https://bailian.console.aliyun.com/) |
-
-```bat
-:: 切到通义千问（答辩若被问"是不是开源 Qwen"，一条命令即可演示）
-set LLM_PROVIDER=dashscope
-```
-
-> **模型名以厂商控制台为准**，且会随迭代变化。先用 `ai2bpmn.cmd --models` 查一次，再决定是否 `set LLM_MODEL=...`。
-
-### 三条命令
-
-```bat
-dev-shell.cmd -WithKey     :: 录入 Key（不回显、不落盘、不进命令历史）
-ai2bpmn.cmd --models       :: 确认当前 Key 可用的模型名
-ai2bpmn.cmd "描述"          :: 真实调用，出 BPMN
-run-llm-tests.cmd          :: 8 条用例批量回归，出一次通过率报告
-```
-
-### Key 的安全约定（P-05）
-
-- Key 只从环境变量读取，不写文件、不写日志、不打印；
-- 录入走 `dev-shell -WithKey`（SecureString），只存在于该窗口内存；
-- **不要把 Key 发给任何人或任何 AI**。协作时提供的是「运行结果」，不是 Key。
-
-## IR 契约
-
-```json
-{
-  "id": "travel-expense",
-  "name": "差旅报销审批流",
-  "processKey": "travelExpense",
-  "variables": [{ "name": "amount", "type": "number" }],
-  "nodes": [
-    { "id": "StartEvent_1", "type": "startEvent", "name": "发起报销" },
-    { "id": "Task_Submit", "type": "userTask", "name": "提交报销单", "assignee": "${initiator}" },
-    { "id": "Gateway_Amount", "type": "exclusiveGateway", "name": "金额判断" }
-  ],
-  "flows": [
-    { "id": "Flow_3", "from": "Gateway_Amount", "to": "Task_Manager",
-      "name": "≤1000", "condition": "${amount <= 1000}" },
-    { "id": "Flow_5", "from": "Gateway_Amount", "to": "Task_Finance",
-      "name": ">5000", "default": true }
-  ]
-}
-```
-
-### 节点类型
-
-| type | 说明 | 支持的属性 |
-|---|---|---|
-| `startEvent` | 开始事件（必须有且仅有 1 个） | `name` |
-| `endEvent` | 结束事件（至少 1 个） | `name` |
-| `userTask` | 人工审批 | `assignee`、`candidateGroups`、`formKey` |
-| `serviceTask` | 自动服务 | `expression`、`delegateExpression` |
-| `exclusiveGateway` | 排他网关（多出向**必须**有 default） | `name` |
-| `parallelGateway` | 并行网关（出向**不可**带条件） | `name` |
-| `inclusiveGateway` | 包容网关 | `name` |
-
-### 连线字段
-
-| 字段 | 必填 | 说明 |
-|---|---|---|
-| `id` | 是 | 唯一 |
-| `from` / `to` | 是 | 节点 id |
-| `condition` | 否 | Flowable 表达式，如 `${amount > 1000}` |
-| `default` | 否 | 同一源节点最多 1 条，序列化时自动写成网关的 `default` 属性 |
-| `name` | 否 | 连线文字（条件流建议写，评审看得懂） |
-
-## 校验分层
-
-| 层 | 实现 | 状态 |
-|---|---|---|
-| L0 契约（字段/类型/id 唯一/自环） | `src/ir.js` | ✅ 已实现 |
-| L1 XML 良构（栈式配对/根元素唯一） | `src/xml-lint.js` | ✅ 已实现 |
-| L3 图论语义（起止唯一/悬挂/不可达/死路/网关 default/并行不含条件） | `src/graph.js` | ✅ 已实现 |
-| L2 BPMN 规范级（官方 OMG XSD） | `tools/xsd-validate/Validate.java`（JDK 17 单文件运行，零依赖） | ✅ 已实现并实测 |
-| L2b 第三方模型校验（bpmn-moddle） | `web/check-model.js`（与 bpmn-js 同源的标准模型库） | ✅ 16/16 通过 |
-| L4-lite 引擎解析 + 流程校验（Flowable 自己的代码） | `tools/flowable-check/FlowableCheck.java`（jar 按需下载到 `.cache`） | ✅ **66/66 通过** |
-| L4 实例运行（真实部署 + 执行 + 路径断言） | `tools/flowable-run/FlowableRun.java`（Flowable + H2 内存引擎） | ✅ **6/6 通过** |
-
-## 为什么一定要有 DI
-
-BPMN XML 分两半：`<bpmn:process>` 是**逻辑**，`<bpmndi:BPMNDiagram>` 是**坐标**。
-
-只生成逻辑段，引擎能部署、能跑，但用 bpmn-js 打开是**一片空白**——演示当场翻车。所以 `src/layout.js` 用最长路径法自动分层排版，序列化时一并输出 Shape 和 Edge。反向用例测试会断言 Shape 数 == 节点数、Edge 数 == 连线数。
-
-## 目录
-
-```
-bpmn-gen/                    108 个文件
-├─ 【形态 ①：命令行】根目录启动器
-│  ├─ demo.cmd               起服务 + 开浏览器
-│  ├─ nl2bpmn.cmd            一句话 → BPMN（离线）
-│  ├─ ai2bpmn.cmd            一句话 → BPMN（大模型）
-│  ├─ bpmn-gen.cmd           IR → BPMN
-│  ├─ bpmn2svg.cmd           BPMN → SVG（不开浏览器出矢量图）
-│  ├─ verify-all.cmd         六层验证一条命令跑完
-│  └─ validate-xsd.cmd / flowable-check.cmd / flowable-run.cmd / run-llm-tests.cmd
-│
-├─ 【形态 ②：桌面应用】桌面启动器
-│  ├─ 创建桌面快捷方式.cmd    在桌面生成图标（只需一次）
-│  ├─ create-shortcut.ps1    上面那个的实现（现场生成，不依赖 .lnk）
-│  ├─ 启动应用.vbs           静默起服务 + 开应用窗口
-│  ├─ 停止应用.vbs           停止本地服务
-│  └─ assets/                app.ico / app-256.png
-│
-├─ bin/                      CLI 入口（3 个）
-├─ src/                      生成内核（零依赖：11 个模块 + 28 个模板）
-│  ├─ ir.js                  L0 契约校验
-│  ├─ graph.js               L3 图论语义校验
-│  ├─ layout.js              自动布局 + DI 坐标（回边绕行）
-│  ├─ serialize.js           IR → BPMN XML（含多实例 / 边界定时器）
-│  ├─ xml-lint.js            L1 XML 良构检查
-│  ├─ repair.js              S2 确定性修复器
-│  ├─ pipeline.js            不可跳过的管线
-│  ├─ nl.js                  关键词匹配 + 槽位抽取（含中文数字）+ 生成提示
-│  ├─ prompt.js              提示词与模型输出解析
-│  ├─ llm.js                 大模型供应商适配（DeepSeek / 百炼）
-│  ├─ artifacts.js           配套产物：表单 / 说明 / 分支用例
-│  └─ templates/             28 个审批流模板（JSON，全部带真实分支）
-├─ web/                      桌面应用（唯一有依赖的目录）
-│  ├─ index.html / app.js / styles.css   含 13 页使用帮助
-│  ├─ serve.js               本地服务（同进程 require 内核，不 spawn）
-│  └─ check-model.js         bpmn-moddle 模型校验
-├─ tools/                    Java 单文件验证器（3 个）
-│  ├─ xsd-validate/          L2 OMG 官方 XSD
-│  ├─ flowable-check/        L4-lite 引擎解析与过程校验
-│  └─ flowable-run/          L4 实例运行 + 路径断言（支持 expecttimer 定时器断言）
-├─ test/                     318 项断言（正向 / 反向 / 可修复 / 自然语言 / 数值解析 / 帮助页 / 脚本卫生）
-├─ scripts/                  零依赖工具（8 个）
-│  ├─ bpmn2svg.js            BPMN → SVG 渲染（直接读 DI 坐标）
-│  ├─ coverage-specs.js      按模板自动生成分支覆盖断言
-│  ├─ compare-raw-xml.js     对照实验：模板方案 vs 大模型直出 XML
-│  └─ fetch-schema.js / fetch-flowable.js / fetch-flowable-engine.js  按需下载
-├─ docs/                     9 份文档
-│  ├─ bpmn-gen-report.pdf    作品介绍（13 页）
-│  ├─ bpmn-gen-report.docx   同上的可编辑版
-│  ├─ build-report.py        PDF 生成脚本
-│  ├─ diagram-render.py      BPMN → PNG（文档配图）
-│  ├─ images/                真实产出的流程图（SVG + PNG）
-│  ├─ ARCHITECTURE.md        架构与设计决策（答辩材料）
-│  ├─ DELIVERABLES.md        交付清单与三分钟复现
-│  ├─ DEMO-EXAMPLES.md       演示用示例句
-│  ├─ THIRD-PARTY.md         第三方组件与许可
-│  └─ VIDEO-SCRIPT.md        演示视频脚本
-├─ .github/workflows/        CI：每次 push 自动跑六层验证
-└─ PRINCIPLES.md / README.md / LICENSE / NOTICE
-```
-
-## 开源合规声明
-
-本项目由开发者主导架构设计与核心实现；部分辅助代码由大模型生成，经人工审查与重构，确保无 GPL/AGPL 传染性代码污染。
-
-| 项 | 内容 |
+| 能力 | 说明 |
 |---|---|
-| 许可证 | **Apache License 2.0** —— [LICENSE](LICENSE)、[NOTICE](NOTICE) |
-| 第三方组件 | [docs/THIRD-PARTY.md](docs/THIRD-PARTY.md)，当前运行时依赖 **0 个** |
-| 大模型辅助 | 已在 NOTICE 声明；核心逻辑（序列化/图论/布局）配自动化测试，测试即人工审查的证据 |
-| 合规自检 | `node scripts\check-principles.js` 中的 **P-11** |
-
-## 技术架构与答辩材料
-
-- [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md)：分层架构图、**5 个关键设计决策**（含被否决的备选方案）、**3 个核心难点**、常见追问的标准回答
-- [PRINCIPLES.md](PRINCIPLES.md)：11 条工程原则，10 条自动检查
+| **审批驳回 / 退回** | 用 BPMN 回边实现：通过 = 默认流，驳回 = 条件 `approved == false`，单子退回发起人重走 |
+| **会签 / 或签（人数可配）** | 多实例任务。会签 = 全部签完；或签 = 任意一人签完即通过。**人数由流程变量列表长度决定**，换人增人只改数据 |
+| **超时催办** | 任务挂边界定时器，超时未处理自动转升级分支；时长可参数化（说"3 天"就是 `P3D`） |
+| **28 个模板，全部带真实分支** | 没有一个只是"提交→审批→结束"的直线：25 个含排他网关，2 个会签/或签，1 个超时边界事件 |
+| **中文数字与单位** | `五千`→5000、`两万`→20000、`一万五`→15000、`10万`→100000；`做一个流程` 不会被当成数字 1 |
+| **生成提示（不静默替换）** | 阈值没认出来、或你说的档位比模板能放的多，都会**明确告诉你用了什么代替** |
+| **交互式澄清** | 关键词把握不大或模型置信度 < 0.7 时**不硬生成**，先摆候选让你点 |
+| **配套产物** | 流程说明书（Markdown）、表单定义（JSON）、分支覆盖用例（JSON） |
+| **导出 SVG** | 界面和命令行都能出矢量图 |
 
 ## 验证记录
 
-两种形态共用同一套验证，一条命令跑完全部六层：`verify-all.cmd`
+一条命令跑完全部六层：`verify-all.cmd`
 
-| # | 层 | 手段 | 结果 |
-|---|---|---|---|
-| 1 | 单元/回归 | `node test\run.js`（正向/反向/可修复/自然语言/提示词/数值解析/脚本卫生） | ✅ **318 项断言** |
-| 2 | L1 良构 | 自研 `xml-lint.js` | ✅ |
-| 3 | L2 规范 | **OMG 官方 XSD** + JDK 17 单文件校验器 | ✅ **66/66 文件** |
-| 4 | L2b 模型 | **第三方 bpmn-moddle** | ✅ **66/66 文件** |
-| 5 | L4-lite 引擎 | **Flowable 7.2.0** 的 `BpmnXMLConverter` + `ProcessValidator` | ✅ **66/66 文件** |
-| 6 | **L4 实例运行** | **Flowable + H2 内存引擎**：部署 → 启动实例 → 自动完成任务 → **路径断言** | ✅ **113/113 断言** |
-| 7 | **分支覆盖** | `scripts/coverage-specs.js` 按模板自动生成断言（每模板：正常走完 + 每条分支） | ✅ **100 条 / 28 模板** |
-| 8 | **对照实验基线** | `scripts/compare-raw-xml.js --dry-run`（模板侧必须 100% 过官方校验） | ✅ 12/12 |
-| — | 大模型端到端 | `run-llm-tests.cmd`（真实调用 8 条用例） | ✅ 8/8（100%） |
+| 层 | 手段 | 结果 |
+|---|---|---|
+| 单元/回归 | `node test\run.js` | ✅ **318 项断言** |
+| L1 良构 / L0 契约 / L3 图论 | 自研 `xml-lint.js` / `ir.js` / `graph.js` | ✅ |
+| L2 规范 | **OMG 官方 XSD** + JDK 17 | ✅ **65/65 文件** |
+| L2b 模型 | 第三方 `bpmn-moddle` | ✅ **65/65 文件** |
+| L4-lite 引擎 | **Flowable 7.2.0** 官方 `ProcessValidator` | ✅ **65/65 文件** |
+| **L4 实例运行** | Flowable + H2 内存引擎：真实部署、启动、走完、路径断言 | ✅ **113 条** |
+| **分支覆盖** | `scripts/coverage-specs.js` 按模板自动生成 | ✅ **100 条 / 28 模板** |
+| 对照实验基线 | `scripts/compare-raw-xml.js --dry-run` | ✅ 12/12 |
 
-**L4 实测路径（同一文件、不同变量走不同分支）**：
+**同一份 BPMN、不同变量走不同分支**（L4 实测）：
 
 ```
 amount=800   → 提交报销单 → 主管审批
-amount=2500  → 提交报销单 → 总监审批
 amount=6000  → 提交报销单 → 财务复核
-days=2       → 填写请假单 → 直属主管审批
 days=9       → 填写请假单 → 人事备案
-合同会签     → 提交 → 法务/财务/业务三方并行 → 汇总结束
 overseas=true→ 提交出差申请 → 行政审核 → 直属主管审批 → 行政备案
 ```
 
-**两个真实收获**：
+> 每次 push 到 GitHub，CI 都会在干净机器上重跑以上全部验证（见 Actions 页）。
 
-1. Flowable 的 `ProcessValidator` 抓到我们自研图论校验漏掉的规则——「默认流不允许带条件」，已补进 `src/graph.js`；
-2. 实例运行验证了**条件表达式真的在起作用**：同一份 BPMN，金额不同走的审批人确实不同。
+## 为什么不让模型直接写 XML
 
-## 对照实验：为什么不让模型直接写 XML
+`scripts/compare-raw-xml.js` 用同一批业务描述跑两条路线，**打分规则与路线无关**（良构 → OMG XSD → Flowable 引擎校验），避免自证自评。
 
-`scripts/compare-raw-xml.js` 用同一批业务描述跑两条路线，**打分规则与路线无关**（良构 → OMG 官方 XSD → Flowable 引擎校验），避免自证自评。
-
-```cmd
-rem 模板侧（不需要 Key，CI 每次自动跑）
-node scripts\compare-raw-xml.js --dry-run --n 12
-
-rem 两侧对比（需要 Key）
+```bat
+node scripts\compare-raw-xml.js --dry-run --n 12     :: 模板侧，不需要 Key
 set DEEPSEEK_API_KEY=sk-xxxx
-node scripts\compare-raw-xml.js --n 12
+node scripts\compare-raw-xml.js --n 12               :: 两侧对比，需要 Key
 ```
 
 当前基线：**模板方案 12/12（100%）**。模型直出一侧的数据由使用者本地跑出，写入 `.data\compare-report.json`。
 
-> 这个脚本会调用 `java` 做官方校验，所以只作为**研究/评测**工具；
-> 产品本体的 web 服务不 spawn 任何子进程（见 [PRINCIPLES.md](PRINCIPLES.md) P-04）。
+## 更多细节
+
+| 想了解 | 去哪看 |
+|---|---|
+| 架构与关键设计决策 | [ARCHITECTURE.md](ARCHITECTURE.md) |
+| 演示用示例句 / 视频脚本 | [DEMO-EXAMPLES.md](docs/DEMO-EXAMPLES.md) / [VIDEO-SCRIPT.md](docs/VIDEO-SCRIPT.md) |
+| 交付清单与三分钟复现 | [DELIVERABLES.md](docs/DELIVERABLES.md) |
+| 环境原则（不污染本机） | [PRINCIPLES.md](PRINCIPLES.md) |
+| 第三方组件与许可 | [THIRD-PARTY.md](docs/THIRD-PARTY.md) |
+| 作品介绍 PDF（11 页） | [docs/bpmn-gen-report.pdf](docs/bpmn-gen-report.pdf) |
+
+## 目录结构（节选）
+
+```
+bpmn-gen/
+├─ 【形态①】nl2bpmn.cmd / bpmn2svg.cmd / verify-all.cmd / demo.cmd
+├─ 【形态②】创建桌面快捷方式.cmd / 启动应用.vbs / 停止应用.vbs
+├─ bin/           CLI 入口
+├─ src/           生成内核（零依赖）：ir / graph / layout / serialize / nl / artifacts + 28 个模板
+├─ web/           桌面应用（唯一有依赖）：index.html / app.js / serve.js
+├─ tools/         Java 单文件验证器：XSD / Flowable 引擎 / 实例运行
+├─ test/          318 项断言 + 用例目录
+├─ scripts/       bpmn2svg / coverage-specs / compare-raw-xml / 下载脚本
+├─ docs/          报告 PDF、架构、交付清单、配图
+└─ .github/       CI：每次 push 自动跑六层验证
+```
 
 ## 环境原则（项目宪法）
 
-完整版见 [PRINCIPLES.md](PRINCIPLES.md)：**10 条原则**，其中 9 条由代码自动检查，红灯即不得产出。
+- **产物只在工作区内**：用户流程写 `.data\out\`，验证产物写 `.data\verify\`，两者不混。
+- **缓存按需下载**：Flowable jar 与 OMG XSD 落在 `.cache\`，删掉可复原。
+- **不装软件、不改 PATH、不写注册表**：每次改动前后用 `env-guard.cmd` 体检，红色即排查。
+- **Key 只在内存里**：不落盘、不进日志（详见 [PRINCIPLES.md](PRINCIPLES.md)）。
 
-```bat
-node scripts\check-principles.js
-```
+## 开源合规声明
 
-| 编号 | 原则 | 检查方式 |
-|---|---|---|
-| P-01 | 磁盘边界：产物不出工作区 | 扫源码里的 `APPDATA`/`os.tmpdir` 等 |
-| P-02 | 零依赖优先 | 依赖字段为空 + 无 `node_modules` |
-| P-03 | 不碰系统层 | 扫 `reg add`/`sc create`/`setx` |
-| P-04 | 进程边界：前台运行 | 扫 `child_process` |
-| P-05 | 密钥不落地 | 扫硬编码密钥特征 |
-| P-06 | 生成物确定性 | 两次序列化比对字节 |
-| P-07 | 模型不直接产出 XML | 校验调用顺序 + 拒绝非 IR 输入 |
-| P-08 | 校验不可跳过 | 坏图必须报错、好图必须零错 |
-| P-09 | 可归零 | `.gitignore` 覆盖 + 项目内无 `*.bpmn` |
-| P-10 | 诚实（未验证不得声称） | 人工守则 |
-
-## 环境约束（本项目强约束）
-
-- **零运行时依赖**：不需要 `npm install`，不需要 `node_modules`。
-- 引擎验证只在 S5 用 `java -jar` 前台跑，不注册服务。
-- 所有产物落在工作区内（用户流程 `.data\out\`、验证产物 `.data\verify\`），交付完 `clean.cmd -All -Force` 一键归零。
-- LLM 密钥只在运行时从环境变量读（`DASHSCOPE_API_KEY`），不写进仓库、不写进日志。
+本项目以 **Apache-2.0** 发布。运行时依赖：Node ≥ 18；形态 ② 额外依赖 `bpmn-js`（bpmn.io，MIT）。
+校验用的 Flowable 组件与 OMG XSD 只在验证阶段按需下载，不随仓库分发。详见 [THIRD-PARTY.md](docs/THIRD-PARTY.md)。
