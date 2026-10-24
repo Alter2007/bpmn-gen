@@ -48,6 +48,10 @@ let lastPing = 0;
 let sawPing = false;
 const IDLE_LIMIT_MS = 35000;
 
+// 进程标识：每次启动都不同。前端据此发现「服务换了」，从而刷新界面状态，
+// 避免页面还停在旧进程的「已就绪」上、实际却拿不到密钥。
+const SESSION_ID = Date.now().toString(36) + '-' + Math.random().toString(36).slice(2, 8);
+
 function maskKey(k) {
   if (!k) return '';
   if (k.length <= 8) return '****';
@@ -165,6 +169,9 @@ async function handleGenerate(body) {
       const sys = buildSystemPrompt(templates);
       const usr = buildUserMessage(text);
       const r = await callChat({
+        apiKey: cfg.apiKey,           // 必须显式传入：否则 callChat 内部只读环境变量，界面里设的 Key 会丢
+        provider: cfg.providerId,
+        model: cfg.model,
         messages: [
           { role: 'system', content: sys },
           { role: 'user', content: usr }
@@ -237,6 +244,7 @@ async function handleRequest(req, res) {
       baseUrl: cfg.baseUrl,
       hasKey: cfg.hasKey,
       keyEnv: cfg.keyEnv,
+      sid: SESSION_ID,
       templates: loadTemplates().length,
       flows: listBpmn().length
     });
@@ -265,7 +273,7 @@ async function handleRequest(req, res) {
   if (p === '/api/ping') {
     lastPing = Date.now();
     sawPing = true;
-    sendJson(res, 200, { ok: true });
+    sendJson(res, 200, { ok: true, sid: SESSION_ID });
     return;
   }
 

@@ -124,6 +124,7 @@
       els.sideModel.textContent = h.model || '未配置模型';
       els.sideProvider.textContent = h.provider + (h.hasKey ? ' · 已就绪' : ' · 无密钥(仅模板)');
       els.sideDot.className = 'usage-dot' + (h.hasKey ? ' on' : '');
+      if (h.sid) { sessionId = h.sid; }
       renderKey(k, h);
 
       var rows = [
@@ -262,7 +263,17 @@
         else toast('生成完成，已保存为 ' + res.file);
       });
     }).catch(function (e) {
-      toast('生成失败：' + e.message, true);
+      var msg = e.message || '';
+      // 密钥类错误：直接把人带到设置页，并刷新一次状态，避免界面还停在旧的「已就绪」
+      if (/API Key|密钥|401|403/i.test(msg)) {
+        toast('缺少可用的密钥：请到「设置」页粘贴后再生成', true);
+        loadHealth();
+        var navSettings = document.querySelector('.nav-item[data-view="settings"]');
+        if (navSettings) navSettings.click();
+        setTimeout(function () { if (els.apiKey) els.apiKey.focus(); }, 300);
+      } else {
+        toast('生成失败：' + msg, true);
+      }
     }).then(function () {
       els.btnGenerate.disabled = false;
       els.btnGenerate.textContent = oldLabel;
@@ -348,9 +359,19 @@
   // ---------------- 心跳 ----------------
   // 页面活着就每 5 秒报一次。窗口关掉后，服务端 35 秒收不到心跳会自动退出，
   // 避免残留进程一直占着内存里的旧密钥（否则下次打开会莫名显示"已就绪"）。
+  // 同时用 sid 识别「服务被重启过」，自动刷新界面状态。
+  var sessionId = '';
   setInterval(function () {
     fetch('/api/ping', { cache: 'no-store' }).then(function (r) {
-      return r.ok;   // 老版本服务没有该路由（404）时静默忽略，不当作断开
+      return r.ok ? r.json() : null;     // 老版本服务没有该路由时返回 null，静默忽略
+    }).then(function (j) {
+      if (!j || !j.sid) return;
+      if (sessionId === '') { sessionId = j.sid; return; }
+      if (j.sid !== sessionId) {
+        sessionId = j.sid;
+        loadHealth();
+        toast('应用已重启，密钥已清空，请重新填写');
+      }
     }).catch(function () {
       // 只有网络层失败，才说明服务真的没了
       els.sideModel.textContent = '服务已退出';
