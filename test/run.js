@@ -396,6 +396,61 @@ function listJson(dir) {
   return fs.readdirSync(dir).filter((f) => f.endsWith('.json')).sort().map((f) => path.join(dir, f));
 }
 
+// ---------------- 数值解析与"不静默"提示 ----------------
+function runNumericUnit() {
+  console.log('');
+  console.log('== 数值解析（中文数字 / 单位 / 提示）==');
+
+  function condsOf(text) {
+    const g = generateFromText(text);
+    if (!g.ok) return { g, conds: [] };
+    const r = runPipeline(g.ir);
+    const out = [];
+    const re = /CDATA\[(\$\{[^\]]*?\})\]/g;
+    let m;
+    while ((m = re.exec(r.xml)) !== null) {
+      const c = m[1];
+      if (c.indexOf('amount') !== -1 || c.indexOf('days') !== -1) out.push(c);
+    }
+    return { g, conds: out };
+  }
+
+  // 中文数字：五千 / 两万 / 一万五
+  let x = condsOf('差旅报销超过五千块钱要财务复核');
+  check('中文数字 五千 => 5000', x.conds.join(' ').indexOf('amount <= 5000') !== -1, x.conds.join(' | '));
+
+  x = condsOf('采购超过两万要总监批');
+  check('中文数字 两万 => 20000', x.conds.join(' ').indexOf('amount <= 20000') !== -1, x.conds.join(' | '));
+
+  x = condsOf('报销超过一万五要财务复核');
+  check('中文数字 一万五 => 15000', x.conds.join(' ').indexOf('amount <= 15000') !== -1, x.conds.join(' | '));
+
+  // "10万" 只能算一个数，不能因为里面有个"万"再多算出一个 10000
+  x = condsOf('采购申请超过10万需要副总批');
+  check('阿拉伯+万 => 100000', x.conds.join(' ').indexOf('amount <= 100000') !== -1, x.conds.join(' | '));
+  check('阿拉伯+万 不重复计数', x.conds.join(' ').indexOf('amount > 10000 ') === -1, x.conds.join(' | '));
+
+  // 序数不能被当成数字
+  x = condsOf('三级审批，主管批');
+  check('三级审批不当作数字', x.conds.join(' ').indexOf('amount <=') === -1 || !x.g.ok, x.conds.join(' | '));
+
+  // 只给一个阈值：必须提示"第二档是估算的"
+  x = condsOf('差旅报销超过五千块钱要财务复核');
+  check('单阈值时提示第二档为估算',
+    (x.g.warnings || []).some(function (w) { return w.indexOf('第二档') !== -1 && w.indexOf('估算') !== -1; }),
+    JSON.stringify(x.g.warnings || []));
+
+  // 说的档数超过模板能力：必须点名"多出的没生成"
+  x = condsOf('请假3天以内主管批，超过7天人事批');
+  check('档数超纲时明确告知',
+    (x.g.warnings || []).some(function (w) { return w.indexOf('只支持') !== -1 && w.indexOf('没有生成') !== -1; }),
+    JSON.stringify(x.g.warnings || []));
+
+  // 完全认不出数值：也要说清楚
+  x = condsOf('采购申请走个审批');
+  const handled = !x.g.ok || (x.g.warnings || []).length > 0 || x.conds.length === 0;
+  check('没有阈值时不静默（有提示或本就不需要阈值）', handled, JSON.stringify(x.g.warnings || []));
+}
 function main() {
   console.log('BPMN 生成器测试套件');
   console.log('='.repeat(52));
@@ -405,6 +460,7 @@ function main() {
   for (const f of listJson(REPAIRABLE)) runRepairable(f);
   runRepairUnit();
   runNlCases();
+  runNumericUnit();
   runPromptUnit();
   runArtifactsUnit();
   runScriptHygiene();

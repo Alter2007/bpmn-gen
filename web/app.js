@@ -271,6 +271,18 @@
       });
   }
 
+  // 把生成提示渲染成黄色条：一眼能看到"我猜的"和"你说的"哪里不一致
+  function renderGenWarnings(list) {
+    if (!els.genWarn) return;
+    if (!list || list.length === 0) {
+      els.genWarn.innerHTML = '';
+      els.genWarn.style.display = 'none';
+      return;
+    }
+    els.genWarn.style.display = 'block';
+    els.genWarn.innerHTML = '<div class="gen-warn-title">生成时需要注意（' + list.length + ' 条）</div>' +
+      '<ul>' + list.map(function (w) { return '<li>' + esc(w) + '</li>'; }).join('') + '</ul>';
+  }
   // ---------------- 渲染 ----------------
   function renderXml(xml) {
     if (!viewer) {
@@ -363,6 +375,9 @@
       if (m.tokens) bits.push('token <b>' + m.tokens.in + '/' + m.tokens.out + '</b>');
       if (m.cases) bits.push('覆盖用例 <b>' + m.cases + '</b> 条');
       els.meta.innerHTML = bits.join('　·　');
+
+      // 生成提示：阈值没认出来、分支数超过模板能力……都要让用户看见，不能静默替换
+      renderGenWarnings(m.warnings || []);
 
       return renderXml(res.xml).then(function () {
         return loadList();

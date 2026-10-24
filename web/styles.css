@@ -451,3 +451,20 @@ code {
   min-width: 58px;
   text-align: center;
 }
+
+/* 生成提示条 */
+.gen-warn {
+  display: none;
+  margin-bottom: 10px;
+  padding: 10px 13px;
+  background: #fffbe6;
+  border-left: 3px solid #fadb14;
+  border-radius: 6px;
+  font-size: 12.5px;
+  line-height: 1.72;
+  color: #614700;
+}
+
+.gen-warn-title { font-weight: 600; margin-bottom: 4px; }
+.gen-warn ul { margin: 0; padding-left: 18px; }
+.gen-warn li { margin: 2px 0; }

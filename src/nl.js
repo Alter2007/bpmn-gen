@@ -78,6 +78,83 @@ function rankTemplates(text, templates) {
 }
 
 // ---------------- 抽取 ----------------
+const CN_DIGIT = { 零: 0, 一: 1, 二: 2, 两: 2, 三: 3, 四: 4, 五: 5, 六: 6, 七: 7, 八: 8, 九: 9 };
+const CN_UNIT = { 十: 10, 百: 100, 千: 1000 };
+
+/** 中文数字转阿拉伯数字：五千=5000、两万=20000、一万五=15000、一千二=1200 */
+function cnToNumber(s) {
+  let total = 0;
+  let section = 0;
+  let num = 0;
+  let lastUnit = 0;
+  for (const ch of s) {
+    if (CN_DIGIT[ch] !== undefined) {
+      num = CN_DIGIT[ch];
+    } else if (CN_UNIT[ch] !== undefined) {
+      section += (num || 1) * CN_UNIT[ch];
+      num = 0;
+      lastUnit = CN_UNIT[ch];
+    } else if (ch === '万') {
+      section = section + num || 1;
+      total += section * 10000;
+      section = 0;
+      num = 0;
+      lastUnit = 10000;
+    } else if (ch === '亿') {
+      total = (total + section + num) * 100000000;
+      section = 0;
+      num = 0;
+      lastUnit = 100000000;
+    }
+  }
+  // 省略单位的口语写法：一万五 => 10000 + 5*1000；一千二 => 1000 + 2*100
+  if (num && lastUnit >= 10000) section += num * 1000;
+  else if (num && lastUnit === 1000) section += num * 100;
+  else section += num;
+  return total + section;
+}
+
+/** 上下文词：出现这些词说明后面的中文数字是阈值 */
+const CN_CUES = ['超过', '小于', '大于', '多于', '少于', '不到', '不超过', '以内', '以下', '以上', '等于', '至少', '最多'];
+/** 数字后面的量词：出现这些说明是业务量而不是"三级"这类序数 */
+// 强量词：单个数词跟它就能判定是数值（请假三天、50元）
+const CN_STRONG_UNITS = ['元', '块', '天', '人', '小时', '万', '千'];
+// 弱量词：只有带量级（十/百/千/万）时才算，避免把"做一个流程""两个方案"当成数字
+const CN_WEAK_UNITS = ['个', '次', '单', '件', '份'];
+
+/**
+ * 抽中文数字。
+ * 为了避免把「三级审批」「十分认真」误判成数字，要求满足其一：
+ *   1) 前后有比较词（超过/小于/以内…）
+ *   2) 后面紧跟量词（元/块/天/人/小时…）
+ *   3) 本身含"万/千"且不是"三级"这种序数组合
+ */
+function extractChineseNumbers(text) {
+  const out = [];
+  const re = /[零一二两三四五六七八九十百千万亿]+/g;
+  let m;
+  while ((m = re.exec(text)) !== null) {
+    const run = m[0];
+    const before = text.slice(Math.max(0, m.index - 4), m.index);
+    const after = text.slice(m.index + run.length, m.index + run.length + 3);
+    // "10万" 里的"万"已经被阿拉伯数字那套吃掉了，别再算一遍，否则会多出一个 10000
+    const prevChar = text.charAt(m.index - 1);
+    if (prevChar && /\d/.test(prevChar)) continue;
+    // 光一个"万/千/百"没有数字成分，不是数值（"十万"含"十"才算）
+    if (!/[零一二两三四五六七八九十]/.test(run)) continue;
+    const hasCue = CN_CUES.some((c) => before.indexOf(c) !== -1);
+    const strongAfter = CN_STRONG_UNITS.some((u) => after.indexOf(u) === 0);
+    const weakAfter = CN_WEAK_UNITS.some((u) => after.indexOf(u) === 0);
+    const hasMagnitude = /[十百千万亿]/.test(run);
+    const isOrdinal = /[级档类]/.test(after.charAt(0));
+    if (isOrdinal) continue;
+    if (!hasCue && !strongAfter && !(weakAfter && hasMagnitude) && !hasMagnitude) continue;
+    const v = cnToNumber(run);
+    if (v > 0 && isFinite(v)) out.push(v);
+  }
+  return out;
+}
+
 function extractNumbers(text) {
   const out = [];
   const re = /(\d+(?:\.\d+)?)\s*(万|w|W|千|k|K)?/g;
@@ -89,6 +166,8 @@ function extractNumbers(text) {
     else if (unit === '千' || unit === 'k' || unit === 'K') v = v * 1000;
     out.push(v);
   }
+  // 中文数字（五千 / 两万 / 一万五）也要认，否则会静默退回默认阈值
+  for (const v of extractChineseNumbers(text)) out.push(v);
   return out;
 }
 
@@ -235,29 +314,54 @@ function generateFromText(text, opts) {
   // 数字按升序填进 slotOrder
   const nums = uniqueNumbers(extractNumbers(input)).sort((a, b) => a - b);
   const order = chosen.slotOrder || [];
+  const slotLabel = function (n) {
+    const s = (chosen.slots || []).filter(function (x) { return x.name === n; })[0];
+    return (s && s.label) ? s.label : n;
+  };
   let idx = 0;
   const filledNumeric = [];
+  const defaulted = [];
   for (const slotName of order) {
     if (idx < nums.length) {
       values[slotName] = nums[idx];
       filledNumeric.push(slotName + '=' + nums[idx]);
       idx++;
     } else {
-      warnings.push('槽位 ' + slotName + ' 未从文本中提取到数值，使用默认值 ' + values[slotName]);
+      defaulted.push(slotName);
     }
   }
-  if (idx < nums.length) {
-    warnings.push('文本中有 ' + (nums.length - idx) + ' 个数值未被使用');
-  }
+  const extraNums = nums.slice(idx);
 
   // 阈值必须递增，否则中间分支会变成空区间
+  let tier2Estimated = false;
   if (values.tier1 !== undefined && values.tier2 !== undefined) {
     const t1 = Number(values.tier1);
     const t2 = Number(values.tier2);
     if (t1 >= t2) {
-      warnings.push('阈值顺序异常（tier1=' + t1 + ' >= tier2=' + t2 + '），已按 tier1×10 修正 tier2');
       values.tier2 = t1 * 10;
+      tier2Estimated = true;
+      // 这个槽位已经从"用默认值"变成"按估算值"，下面不要再重复抱怨
+      const p = defaulted.indexOf('tier2');
+      if (p !== -1) defaulted.splice(p, 1);
     }
+  }
+
+  // 提示按"用户能看懂"的粒度汇总，同一件事只说一遍
+  if (filledNumeric.length === 0) {
+    warnings.push('没从这句话里认出任何数值，' + order.map(slotLabel).join('、') + ' 全部按模板默认值生成；' +
+      '想指定就直接写数字（例如「超过1000」或「超过五千」）');
+  }
+  for (const slotName of defaulted) {
+    warnings.push('「' + slotLabel(slotName) + '」没认出对应数值，按默认值 ' + values[slotName] + ' 生成，请在图上核对');
+  }
+  if (tier2Estimated) {
+    warnings.push('你只描述了一个阈值（' + values.tier1 + '），模板需要两档；第二档先按 ' + values.tier2 +
+      ' 估算，请在图上核对');
+  }
+  if (extraNums.length > 0) {
+    warnings.push('你一共提到了 ' + nums.length + ' 个阈值（' + nums.join('、') + '），但模板「' +
+      (chosen.name || chosen.templateId) + '」只支持 ' + order.length + ' 个，多出的 ' +
+      extraNums.join('、') + ' 没有生成');
   }
 
   const ir = {

@@ -128,6 +128,7 @@
         </div>
 
         <div class="actions">
+          <div class="gen-warn" id="gen-warn"></div>
           <div class="meta" id="meta"></div>
           <div class="action-btns">
             <button class="btn btn-ghost" id="btn-svg" disabled title="下载矢量图（SVG），可直接放进文档">下载 SVG</button>
@@ -284,7 +285,7 @@
               </table>
               <h3>天数也能分级</h3>
               <div class="help-example"><code>请假3天以内主管批，超过7天人事批</code><button class="btn btn-ghost btn-try" data-try="请假3天以内主管批，超过7天人事批">填入这句试试</button></div>
-              <div class="help-tip">阈值支持阿拉伯数字和「万」（例如「超过10万」会解析成 100000）。如果某个数字没能识别，生成结束时会有黄色提示告诉你用了默认值 —— 不会悄悄替换。</div>
+              <div class="help-tip">阈值支持阿拉伯数字、单位「万/千」，也支持中文数字：<code>五千</code>=5000、<code>两万</code>=20000、<code>一万五</code>=15000。如果数值没认出来，或者你说的档位比模板能放的多，生成结果下方会出现<b>黄色提示条</b>，写明用了什么代替 —— 不会悄悄替换。</div>
             </article>
 
             <article class="help-page" data-title="驳回与退回">
