@@ -35,13 +35,15 @@ function varSpec(vars) {
 }
 
 /** 多实例模板需要一个 approvers 列表变量，否则引擎起不来 */
-function defaultsFor(tpl) {
-  const vars = tpl.variables || [];
+function defaultsFor(tpl, ir) {
   const miNode = (tpl.nodes || []).find((n) => n.multiInstance && n.multiInstance.collection);
   const out = { approved: true };   // 显式给"通过"，避免测到"变量缺失"的默认行为
-  if (!miNode) return out;
-  const collection = miNode.multiInstance.collection;
-  out[collection] = ['u1', 'u2', 'u3'];
+  if (miNode) out[miNode.multiInstance.collection] = ['u1', 'u2', 'u3'];
+  // 模板里声明的布尔变量（如 outbound / confidential / production）也必须给值，
+  // 否则网关条件 ${x == true} 在引擎里会抛 Unknown property
+  for (const v of ((ir && ir.variables) || [])) {
+    if (v && v.type === 'boolean' && out[v.name] === undefined) out[v.name] = false;
+  }
   return out;
 }
 

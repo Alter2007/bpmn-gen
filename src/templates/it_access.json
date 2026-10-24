@@ -18,6 +18,11 @@
       "name": "system",
       "type": "string",
       "description": "目标系统"
+    },
+    {
+      "name": "production",
+      "type": "boolean",
+      "description": "是否生产环境权限（生产需运维总监审批）"
     }
   ],
   "nodes": [
@@ -37,6 +42,17 @@
       "type": "userTask",
       "name": "主管审批",
       "assignee": "${manager}"
+    },
+    {
+      "id": "Gateway_Prod",
+      "type": "exclusiveGateway",
+      "name": "是否生产环境"
+    },
+    {
+      "id": "Task_OpsDir",
+      "type": "userTask",
+      "name": "运维总监审批",
+      "assignee": "${opsDirector}"
     },
     {
       "id": "Task_It",
@@ -64,7 +80,7 @@
     {
       "id": "Flow_A1",
       "from": "Task_Leader",
-      "to": "Task_It",
+      "to": "Gateway_Prod",
       "default": true
     },
     {
@@ -83,6 +99,33 @@
     {
       "id": "Flow_9_R2",
       "from": "Task_It",
+      "to": "Task_Apply",
+      "name": "驳回",
+      "condition": "${execution.getVariable('approved') != null && execution.getVariable('approved') == false}"
+    },
+    {
+      "id": "Flow_Prod_Y",
+      "from": "Gateway_Prod",
+      "to": "Task_OpsDir",
+      "name": "生产环境",
+      "condition": "${production == true}"
+    },
+    {
+      "id": "Flow_Prod_N",
+      "from": "Gateway_Prod",
+      "to": "Task_It",
+      "name": "测试环境",
+      "default": true
+    },
+    {
+      "id": "Flow_Prod_M",
+      "from": "Task_OpsDir",
+      "to": "Task_It",
+      "default": true
+    },
+    {
+      "id": "Flow_Prod_R",
+      "from": "Task_OpsDir",
       "to": "Task_Apply",
       "name": "驳回",
       "condition": "${execution.getVariable('approved') != null && execution.getVariable('approved') == false}"

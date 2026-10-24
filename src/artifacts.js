@@ -41,6 +41,10 @@ function sampleValueFor(condition, fallback) {
   // 审批类变量：直接用布尔
   if (varName === APPROVE_VAR) return { name: varName, value: false };
 
+  // 布尔等值条件（${outbound == true} / ${confidential == false}）：样例值就是那个布尔值
+  const boolMatch = c.match(/==\s*(true|false)/);
+  if (boolMatch) return { name: varName, value: boolMatch[1] === 'true' };
+
   const nums = extractThresholds(c);
   if (nums.length === 0) return null;
 

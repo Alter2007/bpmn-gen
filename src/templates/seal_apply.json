@@ -2,25 +2,121 @@
   "templateId": "seal_apply",
   "name": "用章申请",
   "description": "申请用章 → 审批 → 用印登记",
-  "keywords": ["用章", "盖章", "公章", "印章", "用印", "登记", "合同章"],
+  "keywords": [
+    "用章",
+    "盖章",
+    "公章",
+    "印章",
+    "用印",
+    "登记",
+    "合同章"
+  ],
   "slotOrder": [],
   "slots": [
-    { "name": "subject", "type": "string", "default": "用章", "label": "业务对象" }
+    {
+      "name": "subject",
+      "type": "string",
+      "default": "用章",
+      "label": "业务对象"
+    }
   ],
   "processId": "sealApply",
   "processName": "@subject@审批流程",
-  "variables": [],
+  "variables": [
+    {
+      "name": "outbound",
+      "type": "boolean",
+      "description": "是否需要把印章带出公司使用"
+    }
+  ],
   "nodes": [
-    { "id": "StartEvent_1", "type": "startEvent", "name": "发起@subject@申请" },
-    { "id": "Task_Submit", "type": "userTask", "name": "填写用章申请", "assignee": "${initiator}" },
-    { "id": "Task_Approve", "type": "userTask", "name": "行政审批", "assignee": "${admin}" },
-    { "id": "Task_Register", "type": "userTask", "name": "用印登记", "assignee": "${sealKeeper}" },
-    { "id": "EndEvent_1", "type": "endEvent", "name": "完成" }
+    {
+      "id": "StartEvent_1",
+      "type": "startEvent",
+      "name": "发起@subject@申请"
+    },
+    {
+      "id": "Task_Submit",
+      "type": "userTask",
+      "name": "填写用章申请",
+      "assignee": "${initiator}"
+    },
+    {
+      "id": "Task_Approve",
+      "type": "userTask",
+      "name": "行政审批",
+      "assignee": "${admin}"
+    },
+    {
+      "id": "Gateway_Outbound",
+      "type": "exclusiveGateway",
+      "name": "是否外带用印"
+    },
+    {
+      "id": "Task_Legal",
+      "type": "userTask",
+      "name": "法务审核",
+      "assignee": "${legal}"
+    },
+    {
+      "id": "Task_Register",
+      "type": "userTask",
+      "name": "用印登记",
+      "assignee": "${sealKeeper}"
+    },
+    {
+      "id": "EndEvent_1",
+      "type": "endEvent",
+      "name": "完成"
+    }
   ],
   "flows": [
-    { "id": "Flow_1", "from": "StartEvent_1", "to": "Task_Submit" },
-    { "id": "Flow_2", "from": "Task_Submit", "to": "Task_Approve" },
-    { "id": "Flow_3", "from": "Task_Approve", "to": "Task_Register" },
-    { "id": "Flow_4", "from": "Task_Register", "to": "EndEvent_1" }
+    {
+      "id": "Flow_1",
+      "from": "StartEvent_1",
+      "to": "Task_Submit"
+    },
+    {
+      "id": "Flow_2",
+      "from": "Task_Submit",
+      "to": "Task_Approve"
+    },
+    {
+      "id": "Flow_3",
+      "from": "Task_Approve",
+      "to": "Gateway_Outbound"
+    },
+    {
+      "id": "Flow_4",
+      "from": "Task_Register",
+      "to": "EndEvent_1"
+    },
+    {
+      "id": "Flow_Outbound_Y",
+      "from": "Gateway_Outbound",
+      "to": "Task_Legal",
+      "name": "需要外带",
+      "condition": "${outbound == true}"
+    },
+    {
+      "id": "Flow_Outbound_N",
+      "from": "Gateway_Outbound",
+      "to": "Task_Register",
+      "name": "现场用印",
+      "default": true
+    },
+    {
+      "id": "Flow_Outbound_M",
+      "from": "Task_Legal",
+      "to": "Task_Register",
+      "default": true
+    },
+    {
+      "id": "Flow_Outbound_R",
+      "from": "Task_Legal",
+      "to": "Task_Submit",
+      "name": "驳回",
+      "condition": "${execution.getVariable('approved') != null && execution.getVariable('approved') == false}"
+    }
   ]
 }

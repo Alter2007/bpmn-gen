@@ -17,6 +17,11 @@
       "name": "lastDay",
       "type": "string",
       "description": "最后工作日"
+    },
+    {
+      "name": "confidential",
+      "type": "boolean",
+      "description": "是否涉密岗位（涉密需要额外安全审查）"
     }
   ],
   "nodes": [
@@ -42,6 +47,17 @@
       "type": "userTask",
       "name": "HR 审批",
       "assignee": "${hr}"
+    },
+    {
+      "id": "Gateway_Confidential",
+      "type": "exclusiveGateway",
+      "name": "是否涉密岗位"
+    },
+    {
+      "id": "Task_Security",
+      "type": "userTask",
+      "name": "安全审查",
+      "assignee": "${security}"
     },
     {
       "id": "Task_Handover",
@@ -75,7 +91,7 @@
     {
       "id": "Flow_A2",
       "from": "Task_Hr",
-      "to": "Task_Handover",
+      "to": "Gateway_Confidential",
       "default": true
     },
     {
@@ -101,6 +117,33 @@
     {
       "id": "Flow_9_R3",
       "from": "Task_Handover",
+      "to": "Task_Apply",
+      "name": "驳回",
+      "condition": "${execution.getVariable('approved') != null && execution.getVariable('approved') == false}"
+    },
+    {
+      "id": "Flow_Confidential_Y",
+      "from": "Gateway_Confidential",
+      "to": "Task_Security",
+      "name": "涉密",
+      "condition": "${confidential == true}"
+    },
+    {
+      "id": "Flow_Confidential_N",
+      "from": "Gateway_Confidential",
+      "to": "Task_Handover",
+      "name": "非涉密",
+      "default": true
+    },
+    {
+      "id": "Flow_Confidential_M",
+      "from": "Task_Security",
+      "to": "Task_Handover",
+      "default": true
+    },
+    {
+      "id": "Flow_Confidential_R",
+      "from": "Task_Security",
       "to": "Task_Apply",
       "name": "驳回",
       "condition": "${execution.getVariable('approved') != null && execution.getVariable('approved') == false}"
