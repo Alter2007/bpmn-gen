@@ -27,7 +27,48 @@ function sizeOf(type) {
 }
 
 /**
- * 用最长路径法分层（对环形图做迭代上限保护）。
+ * 找出回边（DFS 中指向当前递归栈上节点的边）。
+ * 最长路径分层必须在"去掉回边的 DAG"上做：否则环上会无限松弛，
+ * 层深一路涨到保护上限，节点被推到百万像素外（实测踩过）。
+ * @returns {Set<string>} "from>to" 形式的回边集合
+ */
+function findBackEdges(nodes, succs) {
+  const WHITE = 0;
+  const GRAY = 1;
+  const BLACK = 2;
+  const color = new Map();
+  for (const n of nodes) color.set(n.id, WHITE);
+  const back = new Set();
+
+  for (const n of nodes) {
+    if (color.get(n.id) !== WHITE) continue;
+    const stack = [{ id: n.id, i: 0 }];
+    color.set(n.id, GRAY);
+    while (stack.length > 0) {
+      const top = stack[stack.length - 1];
+      const nexts = succs.get(top.id) || [];
+      if (top.i < nexts.length) {
+        const to = nexts[top.i++];
+        const c = color.get(to);
+        if (c === GRAY) {
+          back.add(top.id + '>' + to);        // 指回栈上的点 = 回边
+        } else if (c === WHITE) {
+          color.set(to, GRAY);
+          stack.push({ id: to, i: 0 });
+        }
+      } else {
+        color.set(top.id, BLACK);
+        stack.pop();
+      }
+    }
+  }
+  return back;
+}
+
+/**
+ * 用最长路径法分层。
+ * 先在去掉回边的 DAG 上分层，再让回边的目标沿用原有层级——
+ * 这样驳回线既不会破坏分层，也不会把节点甩到画布外。
  * @returns {{pos: Map<string, object>, depth: Map<string, number>, layers: Map<number, string[]>}}
  */
 function computeLayout(ir) {
@@ -45,10 +86,17 @@ function computeLayout(ir) {
     if (preds.has(f.to)) preds.get(f.to).push(f.from);
   }
 
+  // 分层用的邻接表：剔除回边（渲染时仍走 computeWaypoints 的回边分支）
+  const back = findBackEdges(nodes, succs);
+  const dagSuccs = new Map();
+  for (const [from, list] of succs) {
+    dagSuccs.set(from, list.filter((to) => !back.has(from + '>' + to)));
+  }
+
   const starts = nodes.filter((n) => n.type === 'startEvent');
   const depth = new Map();
 
-  // 最长路径分层（BFS + 松弛），对环做上限保护
+  // 最长路径分层（BFS + 松弛），DAG 上必然收敛
   const queue = [];
   for (const s of starts) {
     depth.set(s.id, 0);
@@ -64,7 +112,7 @@ function computeLayout(ir) {
     guard++;
     const id = queue.shift();
     const d = depth.get(id) || 0;
-    for (const next of succs.get(id) || []) {
+    for (const next of dagSuccs.get(id) || []) {
       const nd = d + 1;
       if (!depth.has(next) || depth.get(next) < nd) {
         depth.set(next, nd);

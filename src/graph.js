@@ -135,6 +135,34 @@ function analyze(ir) {
     }
   }
 
+  // ---- 活动（任务）多出向规则 ----
+  // 驳回/退回会让一个审批任务有多条出向（通过 / 驳回）。BPMN 语义是：
+  // 所有条件为真的出向都走；都不满足时走 default。所以活动多出向也必须给 default，
+  // 否则 approved 变量缺失时实例会卡在这个任务上。
+  for (const n of nodes) {
+    if (n.type !== 'userTask' && n.type !== 'serviceTask') continue;
+    const outs = out.get(n.id) || [];
+    if (outs.length <= 1) continue;
+
+    const defaults = outs.filter((f) => f.default === true);
+    const unconditional = outs.filter((f) => !f.condition && f.default !== true);
+    const conditional = outs.filter((f) => f.condition);
+
+    if (unconditional.length > 1) {
+      errors.push(
+        `任务 ${n.id}(${n.name || ''}) 有多条无条件出向，会被当成隐式并行分流，应当只保留一条（或设为 default）`
+      );
+    }
+    if (conditional.length > 0 && defaults.length === 0) {
+      errors.push(
+        `任务 ${n.id}(${n.name || ''}) 有多条出向且带条件，但没有默认流（default），条件全不满足时实例会卡死`
+      );
+    }
+    if (defaults.length > 1) {
+      errors.push(`任务 ${n.id}(${n.name || ''}) 有多个默认流，只能有一个`);
+    }
+  }
+
   // ---- 默认流不得带条件 ----
   // 这条规则是 Flowable 部署时抛的：
   //   "Default sequenceflow has a condition, which is not allowed"

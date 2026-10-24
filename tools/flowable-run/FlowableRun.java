@@ -120,6 +120,10 @@ public class FlowableRun {
                     continue;
                 }
 
+                // 前缀断言：驳回/退回会形成环，流程不会"结束"，
+                // 只要路径前 k 段符合预期就停下并判定通过。
+                String expectPrefix = prefixOf(parts);
+                boolean prefixDone = false;
                 try {
                     int guard = 0;
                     while (guard++ < 40) {
@@ -132,6 +136,10 @@ public class FlowableRun {
                             path.add(stripTaskPrefix(t.getTaskDefinitionKey()) + "「" + safe(t.getName()) + "」");
                             taskService.complete(t.getId());
                         }
+                        if (expectPrefix != null && joinKeys(path).startsWith(expectPrefix)) {
+                            prefixDone = true;
+                            break;
+                        }
                     }
                 } catch (Exception e) {
                     System.out.println("[FAIL] " + label + "  执行中断: " + e.getClass().getSimpleName() + ": " + e.getMessage());
@@ -142,13 +150,20 @@ public class FlowableRun {
                 boolean ended = runtimeService.createProcessInstanceQuery()
                     .processInstanceId(pi.getId()).count() == 0;
 
-                // 路径断言：expect=A>B>C 精确；expectcontains=k1,k2 表示必须都出现（并行场景）
+                // 路径断言：expect=A>B>C 精确；expectcontains=k1,k2 表示必须都出现（并行场景）；
+                // expectprefix=A>B 表示前几段匹配即可（驳回环场景，流程不会结束）
                 String expect = expectOf(parts);
                 String expectContains = containsOf(parts);
                 boolean assertOk = true;
                 String why = "";
 
-                if (expect != null) {
+                if (expectPrefix != null) {
+                    String actual = joinKeys(path);
+                    if (!actual.startsWith(expectPrefix)) {
+                        assertOk = false;
+                        why = "期望路径以 " + expectPrefix + " 开头，实际 " + actual;
+                    }
+                } else if (expect != null) {
                     String actual = joinKeys(path);
                     if (!expect.equals(actual)) {
                         assertOk = false;
@@ -166,7 +181,9 @@ public class FlowableRun {
                     }
                 }
 
-                if (ended && !path.isEmpty() && assertOk) {
+                // 前缀断言不要求流程结束（驳回环本来就不会结束）
+                boolean settled = prefixDone || ended;
+                if (settled && !path.isEmpty() && assertOk) {
                     ok++;
                     System.out.println("[PASS] " + label);
                     System.out.println("       路径: " + join(path));
@@ -199,6 +216,8 @@ public class FlowableRun {
             try {
                 if (v.matches("-?\\d+")) vars.put(k, Integer.valueOf(v));
                 else if (v.matches("-?\\d+\\.\\d+")) vars.put(k, Double.valueOf(v));
+                // 布尔字面量要转成 Boolean，否则条件表达式 ${x == false} 永远不成立
+                else if (v.equalsIgnoreCase("true") || v.equalsIgnoreCase("false")) vars.put(k, Boolean.valueOf(v));
                 else vars.put(k, v);
             } catch (NumberFormatException e) {
                 vars.put(k, v);
@@ -235,6 +254,14 @@ public class FlowableRun {
     private static String containsOf(String[] parts) {
         for (int i = 2; i < parts.length; i++) {
             if (parts[i].startsWith("expectcontains=")) return parts[i].substring("expectcontains=".length());
+        }
+        return null;
+    }
+
+    /** spec 形如 file|vars|expectprefix=A>B —— 只要求路径以此开头（驳回环场景） */
+    private static String prefixOf(String[] parts) {
+        for (int i = 2; i < parts.length; i++) {
+            if (parts[i].startsWith("expectprefix=")) return parts[i].substring("expectprefix=".length());
         }
         return null;
     }
