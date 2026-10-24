@@ -218,14 +218,59 @@ function serialize(ir, opts) {
     out.push('      </bpmndi:BPMNShape>');
   }
 
+  // 同一源节点的多条带名连线：按目标节点的上下位置排好序，
+  // 让标签的堆叠顺序和分支的上下顺序一致，避免"看着对不上号"。
+  const namedBySource = new Map();
   for (const f of flows) {
-    const wps = computeWaypoints(f, pos);
+    if (!f.name) continue;
+    if (!namedBySource.has(f.from)) namedBySource.set(f.from, []);
+    namedBySource.get(f.from).push(f);
+  }
+  const labelRank = new Map();
+  for (const arr of namedBySource.values()) {
+    const sorted = arr.slice().sort((a, b) => {
+      const pa = pos.get(a.to) || {};
+      const pb = pos.get(b.to) || {};
+      return (pa.cy || 0) - (pb.cy || 0);
+    });
+    sorted.forEach((f, i) => labelRank.set(f.id, { rank: i, total: sorted.length }));
+  }
+
+  let backLane = 0;
+  for (const f of flows) {
+    const sPos = pos.get(f.from);
+    const tPos = pos.get(f.to);
+    const isBack = sPos && tPos && !(tPos.x >= sPos.x + sPos.w - 1);
+    const wps = computeWaypoints(f, pos, isBack ? backLane : undefined);
+    if (isBack) backLane++;
     if (wps.length === 0) continue;
     out.push(
       '      <bpmndi:BPMNEdge id="' + escAttr(idMap.get(f.id) + '_di') + '" bpmnElement="' + escAttr(idMap.get(f.id)) + '">'
     );
     for (const wp of wps) {
       out.push('        <di:waypoint x="' + wp.x + '" y="' + wp.y + '" />');
+    }
+    // 连线名称放在最长水平段正上方；同一源节点的多条按上下顺序向上错开
+    const label = f.name || '';
+    if (label) {
+      const rk = labelRank.get(f.id) || { rank: 0, total: 1 };
+      const lift = (rk.total - 1 - rk.rank) * 17;
+      let best = null;
+      for (let i = 1; i < wps.length; i++) {
+        const a = wps[i - 1];
+        const b = wps[i];
+        if (Math.abs(a.y - b.y) < 1) {
+          const len = Math.abs(a.x - b.x);
+          if (len > 0 && (!best || len > best.len)) best = { len: len, x: (a.x + b.x) / 2, y: a.y };
+        }
+      }
+      if (best) {
+        const w = Math.max(30, label.length * 15);
+        out.push('        <bpmndi:BPMNLabel>');
+        out.push('          <dc:Bounds x="' + Math.round(best.x - w / 2) + '" y="' + Math.round(best.y - 24 - lift) +
+          '" width="' + w + '" height="' + 18 + '" />');
+        out.push('        </bpmndi:BPMNLabel>');
+      }
     }
     out.push('      </bpmndi:BPMNEdge>');
   }

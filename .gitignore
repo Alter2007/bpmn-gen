@@ -10,3 +10,9 @@ node_modules/
 
 # 桌面快捷方式含本机绝对路径，不入库
 *.lnk
+
+# 命令行演示产物（nl2bpmn / bpmn2svg 的默认输出）
+test.bpmn
+test.svg
+test-*.md
+test-*.json

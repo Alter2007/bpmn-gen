@@ -193,15 +193,22 @@ function computeLayout(ir) {
     });
   }
 
+  // 记录整张图的底部：回边的水平"走廊"要排在所有节点下面
+  let bottom = 0;
+  for (const item of pos.values()) bottom = Math.max(bottom, item.y + item.h);
+  pos.__bottom = bottom;
+
   return { pos, depth, layers };
 }
 
 /**
  * 计算一条连线在 DI 中的折点。
  * 正向（左->右）：源右中 -> 目标左中。
- * 回边（目标在源左侧）：源下中 -> 目标上中，绕行避免穿透节点。
+ * 回边（目标在源左侧）：走"外侧走廊"——从源右下方拐出到列间空隙，向下走到独立 lane，
+ *   再向左到目标正下方，最后从目标【下边】进入。
+ *   绝不再从目标"上边"进（那样竖线会直接穿过整个方框，之前就是这个 bug）。
  */
-function computeWaypoints(flow, pos) {
+function computeWaypoints(flow, pos, laneIndex) {
   const s = pos.get(flow.from);
   const t = pos.get(flow.to);
   if (!s || !t) return [];
@@ -225,17 +232,20 @@ function computeWaypoints(flow, pos) {
     ];
   }
 
-  // 回边
-  const sx = s.cx;
-  const sy = s.y + s.h;
-  const tx = t.cx;
-  const ty = t.y;
-  const midY = Math.round(Math.max(sy, ty) + 60);
+  // ---- 回边：外侧走廊 + 独立 lane ----
+  const lane = typeof laneIndex === 'number' ? laneIndex : 0;
+  const bottom = pos.__bottom || 0;
+  const laneY = Math.round(bottom + 50 + lane * 30);   // 每条回边一条独立水平线
+  const gutterX = Math.round(s.x + s.w + 26);          // 源右侧的列间空隙，不压任何框
+
+  const startY = Math.round(s.y + s.h - 10);           // 从源右下角附近离开
+  const endY = Math.round(t.y + t.h);                  // 从目标【下边】进入
   return [
-    { x: Math.round(sx), y: Math.round(sy) },
-    { x: Math.round(sx), y: midY },
-    { x: Math.round(tx), y: midY },
-    { x: Math.round(tx), y: Math.round(ty) }
+    { x: Math.round(s.x + s.w), y: startY },
+    { x: gutterX, y: startY },
+    { x: gutterX, y: laneY },
+    { x: Math.round(t.cx), y: laneY },
+    { x: Math.round(t.cx), y: endY }
   ];
 }
 

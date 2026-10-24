@@ -563,6 +563,71 @@ function runTemplateInvariants() {
   check('每个模板的审批任务都能驳回', fullCoverage === tpls.length,
     '完整 ' + fullCoverage + ' / ' + tpls.length + '；缺: ' + bad.join(' | '));
 }
+// ---------------- 布局质量：连线不许穿框 ----------------
+// 之前回边从目标"上边"进入，竖线会直接穿过整个方框；而且多条回边挤在同一条
+// 水平通道上，叠成一片看不清。这里把两条不变量锁住。
+function runLayoutUnit() {
+  console.log('');
+  console.log('== 布局质量（连线不穿框 / 回边分道）==');
+
+  const { computeLayout, computeWaypoints } = require('../src/layout');
+  const tpls = loadTemplates();
+  const sample = tpls.filter((t) => t.templateId === 'amount_tiered')[0];
+  if (!sample) { check('找到 amount_tiered 模板', false); return; }
+
+  const built = buildFromTemplate('amount_tiered', {}, '');
+  const ir = built.ir;
+  const layout = computeLayout(ir);
+  const pos = layout.pos;
+
+  // 节点矩形（留 2px 余量，避免端点贴边误判）
+  const rects = [];
+  for (const item of pos.values()) {
+    rects.push({ id: item.id, x: item.x + 2, y: item.y + 2, w: item.w - 4, h: item.h - 4 });
+  }
+
+  const crosses = [];
+  const backLanes = [];
+  let backSeq = 0;
+  for (const f of ir.flows) {
+    const s = pos.get(f.from);
+    const t = pos.get(f.to);
+    if (!s || !t) continue;
+    const isBack = !(t.x >= s.x + s.w - 1);
+    const wps = computeWaypoints(f, pos, isBack ? backSeq : undefined);
+    if (isBack) {
+      backSeq++;
+      // 回边的水平通道（第二段之后的水平线）
+      for (let i = 1; i < wps.length; i++) {
+        if (Math.abs(wps[i - 1].y - wps[i].y) < 1 && Math.abs(wps[i - 1].x - wps[i].x) > 40) {
+          backLanes.push(wps[i].y);
+        }
+      }
+      // 回边必须从目标下边进入，不能从上方"穿"进来
+      const last = wps[wps.length - 1];
+      check('回边从目标下边进入：' + f.id, Math.abs(last.y - (t.y + t.h)) < 2,
+        '落点 y=' + last.y + ' 目标下边 y=' + (t.y + t.h));
+    }
+    // 逐段检查是否穿过其它节点
+    for (let i = 1; i < wps.length; i++) {
+      const a = wps[i - 1];
+      const b = wps[i];
+      const x1 = Math.min(a.x, b.x);
+      const x2 = Math.max(a.x, b.x);
+      const y1 = Math.min(a.y, b.y);
+      const y2 = Math.max(a.y, b.y);
+      for (const r of rects) {
+        if (r.id === f.from || r.id === f.to) continue;
+        const hit = x1 < r.x + r.w && x2 > r.x && y1 < r.y + r.h && y2 > r.y;
+        if (hit) crosses.push(f.id + ' 穿过 ' + r.id);
+      }
+    }
+  }
+
+  check('连线不穿过任何节点框', crosses.length === 0, crosses.slice(0, 4).join(' | '));
+  check('多条回边使用不同的水平通道', new Set(backLanes).size === backLanes.length,
+    JSON.stringify(backLanes));
+}
 function main() {
   console.log('BPMN 生成器测试套件');
   console.log('='.repeat(52));
@@ -574,6 +639,7 @@ function main() {
   runNlCases();
   runNumericUnit();
   runTemplateInvariants();
+  runLayoutUnit();
   runPromptUnit();
   runArtifactsUnit();
   runHelpPageUnit();
