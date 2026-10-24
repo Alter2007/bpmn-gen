@@ -302,6 +302,24 @@
               <p>生成流程后点「下载说明」，文档里有一节「驳回 / 退回路径」，会列出每条回边的来源、去向和条件。</p>
             </article>
 
+            <article class="help-page" data-title="是否类业务分支">
+              <h2>是 / 否 业务分支</h2>
+              <p>很多审批不是按金额分级，而是一个「是／否」判断决定要不要多走一道工序。28 个模板里都内置了这种分支，判断条件由<b>发起人在表单里勾选</b>。</p>
+              <table class="help-table">
+                <tr><th>场景</th><th>判断条件</th><th>肯定时多走一道</th></tr>
+                <tr><td>用章申请</td><td>是否外带用印</td><td>法务审核</td></tr>
+                <tr><td>离职审批</td><td>是否涉密岗位</td><td>安全审查</td></tr>
+                <tr><td>IT 权限申请</td><td>是否生产环境</td><td>运维总监审批</td></tr>
+                <tr><td>出差申请</td><td>是否出境</td><td>行政审核</td></tr>
+                <tr><td>公文签发</td><td>是否急件</td><td>主要领导签发</td></tr>
+                <tr><td>用车申请</td><td>是否出市</td><td>行政经理审批</td></tr>
+              </table>
+              <h3>怎么用</h3>
+              <p>直接描述场景即可，例如「我要用章盖章」。生成后图上会出现一个菱形判断节点，两条出口分别写「需要外带」和「现场用印」。</p>
+              <div class="help-example"><code>申请系统权限</code><button class="btn btn-ghost btn-try" data-try="申请系统权限">填入这句试试</button></div>
+              <div class="help-tip">这些「是／否」变量会自动出现在「下载表单」的字段里（type=boolean），前端照着渲染成勾选框即可，不需要另外约定。</div>
+            </article>
+
             <article class="help-page" data-title="会签与或签">
               <h2>会签（全部签完） / 或签（一人即可）</h2>
               <p>用 BPMN 的多实例任务实现，<b>人数不写死在流程里</b>。</p>
@@ -402,7 +420,7 @@
 
           <div class="help-pager">
             <button class="btn btn-ghost" id="help-prev">← 上一页</button>
-            <span class="help-num" id="help-num">1 / 11</span>
+            <span class="help-num" id="help-num">1 / 13</span>
             <button class="btn btn-ghost" id="help-next">下一页 →</button>
           </div>
         </div>
