@@ -24,6 +24,14 @@
 
 ## 三、三分钟复现
 
+**方式一：双击（不碰命令行）**
+
+把仓库里的 `BPMN 生成器.lnk` 拖到桌面 → 以后双击即可打开应用窗口
+（无黑窗口、无地址栏）。在「设置」页粘贴 DeepSeek API Key → 侧栏变绿点 → 回「生成」页使用。
+密钥只进内存，关掉应用即失效，不写任何文件。
+
+**方式二：命令行**
+
 ```bat
 :: 1) 一句话生成（离线，不需要任何密钥）
 nl2bpmn.cmd "我要做一个差旅报销审批流，金额小于1000主管批，超过5000财务复核"
@@ -38,9 +46,9 @@ demo.cmd
 `verify-all.cmd` 的输出应当是：
 
 ```
-[1/6] unit tests ...                    通过 142 / 失败 0
+[1/6] unit tests ...                    通过 126 / 失败 0
 [2/6] ensure BPMN 2.0 XSD cached ...
-[3/6] official OMG XSD validation ...   validated: 19 files
+[3/6] official OMG XSD validation ...   validated: 28 files
 [4/6] ensure Flowable jars ...
 [5/6] Flowable engine parse + validation ...   通过 19 / 19
 [6/6] L4 real instance run ...                 实例运行通过 6 / 6
