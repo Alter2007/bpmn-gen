@@ -72,6 +72,11 @@ java -Dfile.encoding=UTF-8 -Dstdout.encoding=UTF-8 -cp "%RUNJARS%\*" "tools\flow
 if errorlevel 1 goto fail
 
 echo.
+
+echo   ---- new capabilities: roles / bundle / formKey / ledger ----
+node scripts\check-new-features.js
+if errorlevel 1 goto fail
+
 echo ALL GREEN
 exit /b 0
 

@@ -57,6 +57,13 @@ jobs:
       - name: 对照实验基线（模板侧）
         shell: cmd
         run: node scripts\compare-raw-xml.js --dry-run --n 12
+
+      # 六层验证只管 BPMN 本身合不合法；这几项是我们自己的工程约束：
+      # 角色组表一致 / 交付包齐不齐 / formKey 挂没挂 / 台账写没写。
+      # 单独一步，挂了能一眼看出是"新能力退化"而不是"BPMN 不合法"。
+      - name: 新能力自检（角色组 / 交付包 / formKey / 台账）
+        shell: cmd
+        run: node scripts\check-new-features.js
       # artifact 动作不允许路径里出现 ".."，所以要先把产物拷进工作区
       - name: 收集产物
         if: failure()
