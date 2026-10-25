@@ -14,6 +14,7 @@
     btnExample: $('btn-example'),
     btnRefresh: $('btn-refresh'),
     btnCopy: $('btn-copy'),
+    btnBundle: $('btn-bundle'),
     btnDownload: $('btn-download'),
     chips: $('chips'),
     search: $('search'),
@@ -264,6 +265,7 @@
         renderChips();
         els.btnCopy.disabled = false;
         els.btnDownload.disabled = false;
+    if (els.btnBundle) els.btnBundle.disabled = false;
         els.meta.innerHTML = '已加载 <b>' + esc(name) + '</b>';
       })
       .catch(function (e) {
@@ -361,6 +363,7 @@
       state.artifacts = res.artifacts || null;
       els.btnCopy.disabled = false;
       els.btnDownload.disabled = false;
+    if (els.btnBundle) els.btnBundle.disabled = false;
       if (els.btnSvg) els.btnSvg.disabled = false;
       if (els.btnDoc) els.btnDoc.disabled = !state.artifacts;
       if (els.btnForm) els.btnForm.disabled = !state.artifacts;
@@ -418,6 +421,37 @@
   });
 
   // ---------------- 下载 / 复制 ----------------
+  if (els.btnBundle) els.btnBundle.addEventListener('click', function () {
+    if (!state.file) { toast('先生成一个流程'); return; }
+    var label = els.btnBundle.textContent;
+    els.btnBundle.disabled = true;
+    els.btnBundle.textContent = '打包中…';
+    fetch('/api/bundle', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ file: state.file })
+    }).then(function (res) {
+      if (!res.ok) {
+        return res.json().then(function (e) { throw new Error(e.error || ('HTTP ' + res.status)); });
+      }
+      return res.blob();
+    }).then(function (blob) {
+      var a = document.createElement('a');
+      a.href = URL.createObjectURL(blob);
+      a.download = (state.file || 'process.bpmn').replace(/\.bpmn$/i, '') + '.zip';
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
+      setTimeout(function () { URL.revokeObjectURL(a.href); }, 1500);
+      toast('交付包已下载');
+    }).catch(function (err) {
+      toast('交付包下载失败：' + err.message);
+    }).then(function () {
+      els.btnBundle.disabled = false;
+      els.btnBundle.textContent = label;
+    });
+  });
+
   els.btnDownload.addEventListener('click', function () {
     if (!state.xml) return;
     var blob = new Blob([state.xml], { type: 'application/xml' });

@@ -23,10 +23,12 @@ const fs = require('fs');
 const path = require('path');
 
 const { loadTemplates, listTemplates, generateFromText, buildFromTemplate } = require('../src/nl');
+const { buildArtifacts } = require('../src/artifacts');
+const { buildBundle } = require('../src/bundle');
+const { zip } = require('../src/zip');
 const { buildSystemPrompt, buildUserMessage, parseModelOutput } = require('../src/prompt');
 const { runPipeline } = require('../src/pipeline');
 const { callChat, resolveConfig } = require('../src/llm');
-const { buildArtifacts } = require('../src/artifacts');
 
 const PORT = Number(process.argv[2] || 8099);
 const HOST = '127.0.0.1';
@@ -327,6 +329,19 @@ function finishGenerate(body, meta, result, started, templateId) {
   const filePath = path.join(OUT, fileName);
   fs.writeFileSync(filePath, result.xml, 'utf8');
 
+  // IR 快照：界面版点「下载交付包」时要靠它重建角色组/表单/部署说明
+  try {
+    fs.writeFileSync(path.join(OUT, fileName + '.ir.json'), JSON.stringify({
+      ir: result.ir,
+      templateId: templateId,
+      sourceText: (body && body.text) || '',
+      generatedAt: new Date().toISOString(),
+      warnings: result.warnings || []
+    }), 'utf8');
+  } catch (e) {
+    console.log('[快照] 写入失败（不影响主流程）: ' + (e && e.message));
+  }
+
   // 生成台账：审计要能回答"这版流程是什么时候、按什么话生成的"
   try {
     const { appendLedger, buildEntry } = require('../src/ledger');
@@ -418,6 +433,51 @@ async function handleRequest(req, res) {
     const target = path.resolve(OUT, name);
     if (!target.startsWith(path.resolve(OUT) + path.sep)) { sendJson(res, 400, { ok: false, error: 'bad path' }); return; }
     serveFile(res, target);
+    return;
+  }
+
+  if (p === '/api/bundle') {
+    let body = '';
+    req.on('data', (c) => { body += c; });
+    req.on('end', () => {
+      let payload = {};
+      try { payload = JSON.parse(body || '{}'); } catch (e) { payload = {}; }
+      const name = payload.file || '';
+      if (!safeName(name)) { sendJson(res, 400, { ok: false, error: 'bad file name' }); return; }
+      const target = path.resolve(OUT, name);
+      if (!target.startsWith(path.resolve(OUT) + path.sep)) { sendJson(res, 400, { ok: false, error: 'bad path' }); return; }
+      const snapPath = target + '.ir.json';
+      if (!fs.existsSync(target) || !fs.existsSync(snapPath)) {
+        sendJson(res, 409, { ok: false, error: '找不到该流程的 IR 快照，请重新生成一次再下载交付包' });
+        return;
+      }
+      try {
+        const snap = JSON.parse(fs.readFileSync(snapPath, 'utf8'));
+        const xml = fs.readFileSync(target, 'utf8');
+        const tpl = loadTemplates().find((t) => t.templateId === snap.templateId) || null;
+        const artifacts = buildArtifacts(snap.ir, tpl);
+        const bundle = buildBundle({
+          ir: snap.ir,
+          xml: xml,
+          artifacts: artifacts,
+          meta: {
+            templateId: snap.templateId,
+            sourceText: snap.sourceText,
+            generatedAt: require('../src/ledger').localStamp(new Date(snap.generatedAt))
+          },
+          pipeline: { warnings: snap.warnings || [] }
+        });
+        const zipBuf = zip(bundle.files.map((f) => ({ name: bundle.dirName + '/' + f.name, content: f.content })));
+        res.writeHead(200, {
+          'Content-Type': 'application/zip',
+          'Content-Disposition': 'attachment; filename="' + bundle.dirName + '.zip"',
+          'Content-Length': zipBuf.length
+        });
+        res.end(zipBuf);
+      } catch (e) {
+        sendJson(res, 500, { ok: false, error: '打包失败: ' + (e && e.message ? e.message : e) });
+      }
+    });
     return;
   }
 

@@ -134,6 +134,7 @@
             <button class="btn btn-ghost" id="btn-svg" disabled title="下载矢量图（SVG），可直接放进文档">下载 SVG</button>
             <button class="btn btn-ghost" id="btn-doc" disabled title="下载流程说明（Markdown）">下载说明</button>
             <button class="btn btn-ghost" id="btn-form" disabled title="下载表单定义（JSON）">下载表单</button>
+            <button class="btn btn-ghost" id="btn-bundle" disabled title="一个目录打成一个 zip：bpmn + 说明 + 表单 + 用例 + 角色组 + 部署说明 + 校验摘要">下载交付包</button>
             <button class="btn btn-ghost" id="btn-copy" disabled>复制 XML</button>
             <button class="btn btn-primary" id="btn-download" disabled>下载 .bpmn</button>
           </div>
@@ -402,7 +403,7 @@
               </table>
               <p>界面上对应「下载说明」「下载表单」两个按钮；命令行加 <code>--artifacts</code> 会一次落三个文件。</p>
               <h3>要交给 IT 一个完整的包</h3>
-              <p>命令行加 <code>--bundle</code>，会生成一个目录：</p>
+              <p>界面上点「<b>下载交付包</b>」按钮，直接得到一个 zip（内部同样 7 个文件）；命令行加 <code>--bundle</code>，会生成同样内容的目录：</p>
               <table class="help-table">
                 <tr><th>文件</th><th>给谁</th></tr>
                 <tr><td><code>xxx.bpmn</code></td><td>IT —— 直接导入引擎</td></tr>

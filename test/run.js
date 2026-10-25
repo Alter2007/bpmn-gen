@@ -850,6 +850,50 @@ function runNamingUnit() {
   fs.unlinkSync(tmp);
 }
 
+// ---------------- 交付包打包（零依赖 zip） ----------------
+// 界面版要把 7 个文件打成一个 zip 下载，所以自己写了个 store 模式的 zip。
+// 这里自证：打包 → 解包 → 名称与内容都一致，且中文文件名不乱码。
+function runZipUnit() {
+  console.log('');
+  console.log('== 交付包打包（zip）==');
+
+  const { zip, unzip } = require('../src/zip');
+  const { buildBundle } = require('../src/bundle');
+  const { buildArtifacts } = require('../src/artifacts');
+
+  // 1) 基础往返
+  const sample = [
+    { name: 'a.bpmn', content: '<xml>hi</xml>' },
+    { name: '说明.md', content: '# 中文名\n内容' },
+    { name: 'empty.txt', content: '' }
+  ];
+  const buf = zip(sample, new Date(2026, 0, 1, 12, 0, 0));
+  check('zip 有本地头签名', buf.readUInt32LE(0) === 0x04034b50);
+  const back = unzip(buf);
+  check('zip 条目数正确', back.length === 3, '条目 ' + back.length);
+  check('中文文件名不乱码', back[1].name === '说明.md', back[1].name);
+  check('内容往返一致', back[0].content.toString() === sample[0].content &&
+    back[1].content.toString() === sample[1].content);
+  check('空文件也能打包', back[2].content.length === 0);
+
+  // 2) 真实交付包
+  const built = buildFromTemplate('amount_tiered', {}, '');
+  const r = runPipeline(built.ir);
+  const a = buildArtifacts(r.ir, built.template || null);
+  const bundle = buildBundle({
+    ir: r.ir, xml: r.xml, artifacts: a,
+    meta: { templateId: 'amount_tiered', sourceText: '测试', generatedAt: '2026-01-01 00:00' },
+    pipeline: { warnings: r.warnings || [] }
+  });
+  const zipped = zip(bundle.files.map((f) => ({ name: bundle.dirName + '/' + f.name, content: f.content })));
+  const entries = unzip(zipped);
+  check('交付包 7 个文件都在 zip 里', entries.length === 7, '条目 ' + entries.length);
+  check('zip 里保留目录前缀',
+    entries.every((e) => e.name.indexOf(bundle.dirName + '/') === 0), entries[0] && entries[0].name);
+  const bpmnEntry = entries.filter((e) => /\.bpmn$/.test(e.name))[0];
+  check('zip 里的 bpmn 与生成结果一致', bpmnEntry && bpmnEntry.content.toString() === r.xml);
+}
+
 function main() {
   console.log('BPMN 生成器测试套件');
   console.log('='.repeat(52));
@@ -866,6 +910,7 @@ function main() {
   runBundleUnit();
   runFormUnit();
   runNamingUnit();
+  runZipUnit();
   runPromptUnit();
   runArtifactsUnit();
   runHelpPageUnit();
