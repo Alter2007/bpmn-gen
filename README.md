@@ -121,9 +121,9 @@ demo.cmd
 | L2 规范 | **OMG 官方 XSD** + JDK 17 | ✅ **65/65 文件** |
 | L2b 模型 | 第三方 `bpmn-moddle` | ✅ **65/65 文件** |
 | L4-lite 引擎 | **Flowable 7.2.0** 官方 `ProcessValidator` | ✅ **65/65 文件** |
-| **L4 实例运行** | Flowable + H2 内存引擎：真实部署、启动、走完、路径断言 | ✅ **113 条** |
+| **L4 实例运行** | Flowable + H2 内存引擎：真实部署、启动、走完、路径断言（人工编写） | ✅ **13 条** |
 | **文档数字守卫** | `test\run.js` 跑完后比对文档里的断言数/模板数 | ✅ 不一致即 FAIL |
-| **分支覆盖** | `scripts/coverage-specs.js` 按模板自动生成 | ✅ **104 条 / 28 模板** |
+| **分支覆盖** | `scripts/coverage-specs.js` 按模板自动生成并实跑（机器生成） | ✅ **104 条 / 28 模板** |
 | 对照实验基线 | `scripts/compare-raw-xml.js --dry-run` | ✅ 12/12 |
 
 **同一份 BPMN、不同变量走不同分支**（L4 实测）：
