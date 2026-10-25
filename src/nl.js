@@ -239,7 +239,7 @@ function findUnresolved(ir) {
  * 按模板 + 槽位值直接构建 IR（不再从文本抽取）。
  * 这是 LLM 通道的落点：模型只给 templateId + slots，结构仍由模板保证（P-07）。
  */
-function buildFromTemplate(templateId, values, sourceText) {
+function buildFromTemplate(templateId, values, sourceText, options) {
   const templates = loadTemplates();
   const tpl = templates.filter((t) => t.templateId === templateId)[0];
   if (!tpl) return null;
@@ -260,12 +260,24 @@ function buildFromTemplate(templateId, values, sourceText) {
     flows: renderDeep(tpl.flows || [], vals)
   };
 
-  // 表单键：挂在"第一个用户任务（发起/提交）"上，引擎可用它渲染发起表单
-  ir.formKey = 'form_' + ir.processKey;
-  const firstTask = (ir.nodes || []).filter((n) => n.type === 'userTask')[0];
-  if (firstTask && !firstTask.formKey) firstTask.formKey = ir.formKey;
+  applyNaming(ir, options);
 
   return { ir: ir, values: vals, unresolved: findUnresolved(ir), template: tpl };
+}
+
+/**
+ * 命名与版本：processKey 可加前缀/整体覆盖，versionTag 可指定。
+ * 这三样决定"导入引擎后会不会和已有流程撞车"，真实部署必须可配。
+ */
+function applyNaming(ir, options) {
+  const o = options || {};
+  if (o.key) ir.processKey = String(o.key);
+  else if (o.keyPrefix) ir.processKey = String(o.keyPrefix) + ir.processKey;
+  ir.versionTag = o.versionTag ? String(o.versionTag) : (ir.versionTag || '1');
+  ir.formKey = 'form_' + ir.processKey;
+  const firstTask = (ir.nodes || []).filter((n) => n.type === 'userTask')[0];
+  if (firstTask) firstTask.formKey = ir.formKey;
+  return ir;
 }
 
 // ---------------- 主流程 ----------------
@@ -382,10 +394,7 @@ function generateFromText(text, opts) {
     flows: renderDeep(chosen.flows || [], values)
   };
 
-  // 表单键：挂在"第一个用户任务（发起/提交）"上，引擎可用它渲染发起表单
-  ir.formKey = 'form_' + ir.processKey;
-  const firstTask = (ir.nodes || []).filter((n) => n.type === 'userTask')[0];
-  if (firstTask && !firstTask.formKey) firstTask.formKey = ir.formKey;
+  applyNaming(ir, options);
 
   const unresolved = findUnresolved(ir);
   if (unresolved.length > 0) {

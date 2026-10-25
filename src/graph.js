@@ -235,8 +235,14 @@ function analyze(ir) {
       for (const id of ids) used.add(id);
     }
   }
+  // 表单专用字段（只出现在申请单上，不参与任何网关条件）不算"未使用"。
+  // 例如"费用类型""发票号"是给发起人填的，流程里没有它们的判断分支是正常的。
+  const formOnly = new Set(
+    (ir.variables || []).filter((v) => v && v.formOnly).map((v) => v.name)
+  );
   for (const v of declared) {
-    if (!used.has(v)) warnings.push(`变量 ${v} 已声明但流程里未使用`);
+    if (used.has(v) || formOnly.has(v)) continue;
+    warnings.push(`变量 ${v} 已声明但流程里未使用`);
   }
 
   return { errors, warnings };

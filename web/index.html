@@ -439,6 +439,7 @@
             <article class="help-page" data-title="命令行用法">
               <h2>命令行版（同功能）</h2>
               <p>界面和命令行共用同一套内核，产物逐字节一致。</p>
+              <div class="help-tip">真实部署常用三个参数：<code>--bundle</code>（出交付目录）、<code>--key-prefix gov_</code>（防流程 Key 撞车）、<code>--version 2</code>（写版本号）。每次生成都会往 <code>生成台账.jsonl</code> 追加一行，审计可查。</div>
               <table class="help-table">
                 <tr><th>命令</th><th>作用</th></tr>
                 <tr><td><code>nl2bpmn.cmd --list</code></td><td>列出全部模板</td></tr>

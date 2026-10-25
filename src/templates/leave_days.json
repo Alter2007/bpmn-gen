@@ -65,7 +65,8 @@
           "value": "compensatory",
           "label": "调休"
         }
-      ]
+      ],
+      "formOnly": true
     }
   ],
   "nodes": [

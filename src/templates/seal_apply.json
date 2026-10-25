@@ -32,13 +32,15 @@
       "name": "sealCount",
       "type": "number",
       "required": true,
-      "description": "用印份数"
+      "description": "用印份数",
+      "formOnly": true
     },
     {
       "name": "needDate",
       "type": "date",
       "required": false,
-      "description": "需要用印日期"
+      "description": "需要用印日期",
+      "formOnly": true
     }
   ],
   "nodes": [

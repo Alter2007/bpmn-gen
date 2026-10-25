@@ -73,13 +73,15 @@
           "value": "other",
           "label": "其他"
         }
-      ]
+      ],
+      "formOnly": true
     },
     {
       "name": "invoiceNo",
       "type": "string",
       "required": false,
-      "description": "发票号"
+      "description": "发票号",
+      "formOnly": true
     }
   ],
   "nodes": [

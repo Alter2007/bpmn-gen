@@ -16,3 +16,6 @@ test.bpmn
 test.svg
 test-*.md
 test-*.json
+
+# 生成台账（本地审计记录，不入库）
+生成台账.jsonl

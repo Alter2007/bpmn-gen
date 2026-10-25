@@ -31,6 +31,9 @@ function usage() {
   console.log('  --verbose      打印匹配过程与槽位填充明细');
   console.log('  --artifacts    额外输出配套产物：说明(.md) / 表单(.json) / 分支用例(.json)');
   console.log('  --bundle       输出交付包目录（.bpmn + 说明 + 表单 + 用例 + 角色组 + 部署说明 + 校验摘要）');
+  console.log('  --key-prefix <p> 给 processKey 加前缀（如 gov_），避免导入时和已有流程撞车');
+  console.log('  --key <k>      直接指定 processKey');
+  console.log('  --version <n>  写入 flowable:versionTag（默认 1）');
   console.log('');
   console.log('退出码: 0 成功 / 2 失败');
 }
@@ -51,6 +54,9 @@ function main() {
   let list = false;
   let artifacts = false;
   let bundle = false;
+  let keyPrefix = '';
+  let key = '';
+  let versionTag = '';
 
   for (let i = 0; i < argv.length; i++) {
     const a = argv[i];
@@ -61,6 +67,9 @@ function main() {
     else if (a === '--verbose') verbose = true;
     else if (a === '--artifacts') artifacts = true;
     else if (a === '--bundle') bundle = true;
+    else if (a === '--key-prefix') keyPrefix = argv[++i];
+    else if (a === '--key') key = argv[++i];
+    else if (a === '--version') versionTag = argv[++i];
     else if (a === '--list') list = true;
     else if (!text) text = a;
   }
@@ -81,7 +90,12 @@ function main() {
 
   if (!text) { usage(); process.exit(2); }
 
-  const g = generateFromText(text, { templateId: templateId || undefined });
+  const g = generateFromText(text, {
+    templateId: templateId || undefined,
+    keyPrefix: keyPrefix || undefined,
+    key: key || undefined,
+    versionTag: versionTag || undefined
+  });
 
   if (!g.ok) {
     console.log('[ERR] ' + g.error);
@@ -165,6 +179,25 @@ function main() {
     fs.writeFileSync(base + '-用例.json', JSON.stringify(a.cases, null, 2) + '\n', 'utf8');
     console.log('     配套: ' + path.basename(base) + '-说明.md / -表单.json / -用例.json' +
       '（' + a.cases.total + ' 条分支用例）');
+  }
+  // 生成台账：每次生成追加一行（审计追溯用）
+  try {
+    const { appendLedger, buildEntry } = require('../src/ledger');
+    const led = appendLedger(buildEntry({
+      ir: r.ir,
+      xml: r.xml,
+      meta: {
+        templateId: g.templateId,
+        sourceText: text,
+        generatedAt: require('../src/ledger').localStamp(),
+        mode: 'cli'
+      },
+      pipeline: { warnings: r.warnings || [] },
+      output: outPath
+    }));
+    console.log('     台账: ' + path.resolve(led.path));
+  } catch (e) {
+    console.log('     台账: 写入失败（不影响生成）: ' + (e && e.message));
   }
   // 交付包：一个目录交给 IT 同事（.bpmn + 说明 + 表单 + 用例 + 角色组 + 部署说明 + 校验摘要）
   if (bundle) {

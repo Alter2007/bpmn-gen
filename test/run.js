@@ -12,6 +12,7 @@
 
 const fs = require('fs');
 const path = require('path');
+const os = require('os');
 const { runPipeline } = require('../src/pipeline');
 const { repairIR } = require('../src/repair');
 const { generateFromText, loadTemplates, buildFromTemplate } = require('../src/nl');
@@ -797,6 +798,58 @@ function runFormUnit() {
   check('表单说明里标注了引擎绑定', !!(a.form.engineBinding && a.form.engineBinding.formKey === a.form.formKey));
 }
 
+// ---------------- 命名 / 版本 / 台账 ----------------
+// 真实部署必须能控制 processKey（防撞车）与 versionTag（流程演进），
+// 并且每次生成留痕（审计要问"这版是谁、按什么要求生成的"）。
+function runNamingUnit() {
+  console.log('');
+  console.log('== 命名 / 版本 / 台账 ==');
+
+  // 1) 前缀
+  const p = generateFromText('差旅报销，金额小于1000主管批', { keyPrefix: 'gov_' });
+  check('processKey 加前缀', p.ir.processKey === 'gov_amountTiered', p.ir.processKey);
+  check('formKey 跟着前缀走', p.ir.formKey === 'form_gov_amountTiered', p.ir.formKey);
+  const firstTask = p.ir.nodes.filter((n) => n.type === 'userTask')[0];
+  check('提交任务上的 formKey 一致', firstTask.formKey === p.ir.formKey, firstTask.formKey);
+
+  // 2) 整体覆盖
+  const k = generateFromText('差旅报销，金额小于1000主管批', { key: 'gov_travel_v2' });
+  check('processKey 可整体覆盖', k.ir.processKey === 'gov_travel_v2', k.ir.processKey);
+
+  // 3) 版本号
+  const v = generateFromText('差旅报销，金额小于1000主管批', { versionTag: '7' });
+  const rv = runPipeline(v.ir);
+  check('versionTag 进入 XML', /flowable:versionTag="7"/.test(rv.xml));
+  check('默认版本号是 1', /flowable:versionTag="1"/.test(runPipeline(generateFromText('差旅报销，金额小于1000主管批').ir).xml));
+
+  // 4) 台账
+  const { appendLedger, buildEntry } = require('../src/ledger');
+  const tmp = path.join(os.tmpdir(), 'bpmn-ledger-test-' + process.pid + '.jsonl');
+  if (fs.existsSync(tmp)) fs.unlinkSync(tmp);
+
+  const base = generateFromText('差旅报销，金额小于1000主管批', { versionTag: '2' });
+  const rr = runPipeline(base.ir);
+  for (let i = 0; i < 2; i++) {
+    appendLedger(buildEntry({
+      ir: rr.ir, xml: rr.xml,
+      meta: { templateId: 'amount_tiered', sourceText: '测试原话' + i, generatedAt: '2026-01-01 00:00:00', mode: 'test' },
+      pipeline: { warnings: rr.warnings || [] },
+      output: 'x.bpmn'
+    }), tmp);
+  }
+
+  const lines = fs.readFileSync(tmp, 'utf8').trim().split('\n');
+  check('台账按行追加', lines.length === 2, '行数 ' + lines.length);
+  const e1 = JSON.parse(lines[0]);
+  check('台账记录原话', e1.sourceText === '测试原话0', e1.sourceText);
+  check('台账记录 processKey/versionTag', e1.processKey === 'amountTiered' && e1.versionTag === '2',
+    e1.processKey + '/' + e1.versionTag);
+  check('台账记录 formKey', !!e1.formKey && e1.formKey.indexOf('form_') === 0, e1.formKey);
+  check('台账记录 xml 指纹', /^[0-9a-f]{16}$/.test(e1.xmlSha256), e1.xmlSha256);
+  check('台账指纹与内容一致', e1.xmlSha256 === require('../src/ledger').sha256(rr.xml));
+  fs.unlinkSync(tmp);
+}
+
 function main() {
   console.log('BPMN 生成器测试套件');
   console.log('='.repeat(52));
@@ -812,6 +865,7 @@ function main() {
   runAssignmentUnit();
   runBundleUnit();
   runFormUnit();
+  runNamingUnit();
   runPromptUnit();
   runArtifactsUnit();
   runHelpPageUnit();

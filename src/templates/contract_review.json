@@ -27,13 +27,15 @@
       "name": "contractNo",
       "type": "string",
       "required": true,
-      "description": "合同编号"
+      "description": "合同编号",
+      "formOnly": true
     },
     {
       "name": "contractAmount",
       "type": "number",
       "required": true,
-      "description": "合同金额（元）"
+      "description": "合同金额（元）",
+      "formOnly": true
     }
   ],
   "nodes": [

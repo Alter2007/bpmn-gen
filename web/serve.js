@@ -324,7 +324,27 @@ function finishGenerate(body, meta, result, started, templateId) {
 
   ensureOut();
   const fileName = templateId + '-' + stamp() + '.bpmn';
-  fs.writeFileSync(path.join(OUT, fileName), result.xml, 'utf8');
+  const filePath = path.join(OUT, fileName);
+  fs.writeFileSync(filePath, result.xml, 'utf8');
+
+  // 生成台账：审计要能回答"这版流程是什么时候、按什么话生成的"
+  try {
+    const { appendLedger, buildEntry } = require('../src/ledger');
+    appendLedger(buildEntry({
+      ir: result.ir,
+      xml: result.xml,
+      meta: {
+        templateId: templateId,
+        sourceText: (body && body.text) || '',
+        generatedAt: require('../src/ledger').localStamp(),
+        mode: 'web'
+      },
+      pipeline: { warnings: result.warnings || [] },
+      output: fileName
+    }));
+  } catch (e) {
+    console.log('[台账] 写入失败（不影响主流程）: ' + (e && e.message));
+  }
 
   // 配套产物：表单定义 / 文字说明 / 分支用例
   const tpl = loadTemplates().find((t) => t.templateId === templateId) || null;

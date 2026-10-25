@@ -102,7 +102,8 @@ function serialize(ir, opts) {
       ' exporterVersion="' + escAttr(exporterVersion) + '">'
   );
 
-  out.push('  <bpmn:process id="' + escAttr(processId) + '" name="' + escAttr(processName) + '" isExecutable="true">');
+  const versionAttr = (ir && ir.versionTag) ? ' flowable:versionTag="' + escAttr(ir.versionTag) + '"' : '';
+  out.push('  <bpmn:process id="' + escAttr(processId) + '" name="' + escAttr(processName) + '" isExecutable="true"' + versionAttr + '>');
 
   // ---- 流程元素 ----
   for (const n of nodes) {
