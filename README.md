@@ -116,7 +116,7 @@ demo.cmd
 
 | 层 | 手段 | 结果 |
 |---|---|---|
-| 单元/回归 | `node test\run.js` | ✅ **348 项断言** |
+| 单元/回归 | `node test\run.js` | ✅ **400 项断言** |
 | L1 良构 / L0 契约 / L3 图论 | 自研 `xml-lint.js` / `ir.js` / `graph.js` | ✅ |
 | L2 规范 | **OMG 官方 XSD** + JDK 17 | ✅ **65/65 文件** |
 | L2b 模型 | 第三方 `bpmn-moddle` | ✅ **65/65 文件** |
@@ -169,7 +169,7 @@ bpmn-gen/
 ├─ src/           生成内核（零依赖）：ir / graph / layout / serialize / nl / artifacts + 28 个模板
 ├─ web/           桌面应用（唯一有依赖）：index.html / app.js / serve.js
 ├─ tools/         Java 单文件验证器：XSD / Flowable 引擎 / 实例运行
-├─ test/          348 项断言 + 用例目录
+├─ test/          400 项断言 + 用例目录
 ├─ scripts/       bpmn2svg / coverage-specs / compare-raw-xml / 下载脚本
 ├─ docs/          报告 PDF、架构、交付清单、配图
 └─ .github/       CI：每次 push 自动跑六层验证
