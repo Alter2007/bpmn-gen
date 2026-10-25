@@ -50,6 +50,36 @@
       "name": "@varName@",
       "type": "number",
       "description": "业务金额"
+    },
+    {
+      "name": "costType",
+      "type": "enum",
+      "required": true,
+      "description": "费用类型",
+      "options": [
+        {
+          "value": "traffic",
+          "label": "交通"
+        },
+        {
+          "value": "hotel",
+          "label": "住宿"
+        },
+        {
+          "value": "meal",
+          "label": "餐饮"
+        },
+        {
+          "value": "other",
+          "label": "其他"
+        }
+      ]
+    },
+    {
+      "name": "invoiceNo",
+      "type": "string",
+      "required": false,
+      "description": "发票号"
     }
   ],
   "nodes": [

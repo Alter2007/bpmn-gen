@@ -22,7 +22,20 @@
   ],
   "processId": "contractReview",
   "processName": "@subject@会签流程",
-  "variables": [],
+  "variables": [
+    {
+      "name": "contractNo",
+      "type": "string",
+      "required": true,
+      "description": "合同编号"
+    },
+    {
+      "name": "contractAmount",
+      "type": "number",
+      "required": true,
+      "description": "合同金额（元）"
+    }
+  ],
   "nodes": [
     {
       "id": "StartEvent_1",

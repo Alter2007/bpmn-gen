@@ -260,6 +260,11 @@ function buildFromTemplate(templateId, values, sourceText) {
     flows: renderDeep(tpl.flows || [], vals)
   };
 
+  // 表单键：挂在"第一个用户任务（发起/提交）"上，引擎可用它渲染发起表单
+  ir.formKey = 'form_' + ir.processKey;
+  const firstTask = (ir.nodes || []).filter((n) => n.type === 'userTask')[0];
+  if (firstTask && !firstTask.formKey) firstTask.formKey = ir.formKey;
+
   return { ir: ir, values: vals, unresolved: findUnresolved(ir), template: tpl };
 }
 
@@ -376,6 +381,11 @@ function generateFromText(text, opts) {
     nodes: renderDeep(chosen.nodes || [], values),
     flows: renderDeep(chosen.flows || [], values)
   };
+
+  // 表单键：挂在"第一个用户任务（发起/提交）"上，引擎可用它渲染发起表单
+  ir.formKey = 'form_' + ir.processKey;
+  const firstTask = (ir.nodes || []).filter((n) => n.type === 'userTask')[0];
+  if (firstTask && !firstTask.formKey) firstTask.formKey = ir.formKey;
 
   const unresolved = findUnresolved(ir);
   if (unresolved.length > 0) {

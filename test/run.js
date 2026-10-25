@@ -756,6 +756,47 @@ function runBundleUnit() {
     !/L2[^\n]*通过/.test(summary));
 }
 
+// ---------------- 表单定义 ----------------
+// 真实单位的申请单不可能只有"金额"一个字段；字段类型也必须具体到控件。
+function runFormUnit() {
+  console.log('');
+  console.log('== 表单定义（通用字段 / 类型映射 / formKey）==');
+
+  const { buildFromTemplate } = require('../src/nl');
+  const { runPipeline } = require('../src/pipeline');
+  const { buildArtifacts } = require('../src/artifacts');
+
+  const b = buildFromTemplate('amount_tiered', {}, '');
+  const r = runPipeline(b.ir);
+  const a = buildArtifacts(r.ir, b.template || null);
+  const ids = a.form.fields.map((f) => f.id);
+
+  check('表单含申请事由', ids.indexOf('applySubject') !== -1, ids.join(','));
+  check('表单含申请日期', ids.indexOf('applyDate') !== -1);
+  check('表单含附件', ids.indexOf('attachment') !== -1);
+  check('表单含审批决策字段', ids.indexOf('approved') !== -1);
+  check('没有重复字段', new Set(ids).size === ids.length, ids.join(','));
+  check('事由是多行文本', (a.form.fields.filter((f) => f.id === 'applySubject')[0] || {}).type === 'textarea');
+
+  // 枚举 → select，且必须带选项
+  const cost = a.form.fields.filter((f) => f.id === 'costType')[0];
+  check('枚举字段映射为 select', !!cost && cost.type === 'select', JSON.stringify(cost || null));
+  check('select 带选项', !!cost && Array.isArray(cost.options) && cost.options.length >= 2,
+    JSON.stringify(cost && cost.options ? cost.options.length : 0));
+
+  // 日期 → date
+  const dateField = a.form.fields.filter((f) => f.id === 'applyDate')[0];
+  check('日期字段映射为 date', !!dateField && dateField.type === 'date');
+
+  // formKey：表单键 == BPMN 提交任务上的 flowable:formKey
+  const tag = (r.xml.match(/<bpmn:userTask[^>]*flowable:formKey="[^"]+"/) || [''])[0];
+  const xmlKey = (/flowable:formKey="([^"]+)"/.exec(tag) || [])[1];
+  check('提交任务带 formKey', !!xmlKey, tag);
+  check('表单键与 BPMN 一致', xmlKey === a.form.formKey, xmlKey + ' vs ' + a.form.formKey);
+  check('formKey 以 form_ 开头', /^form_/.test(a.form.formKey || ''), a.form.formKey);
+  check('表单说明里标注了引擎绑定', !!(a.form.engineBinding && a.form.engineBinding.formKey === a.form.formKey));
+}
+
 function main() {
   console.log('BPMN 生成器测试套件');
   console.log('='.repeat(52));
@@ -770,6 +811,7 @@ function main() {
   runLayoutUnit();
   runAssignmentUnit();
   runBundleUnit();
+  runFormUnit();
   runPromptUnit();
   runArtifactsUnit();
   runHelpPageUnit();

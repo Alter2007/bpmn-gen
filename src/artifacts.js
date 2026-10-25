@@ -70,22 +70,52 @@ function sampleValueFor(condition, fallback) {
   return { name: varName, value: value };
 }
 
-/** 1) 表单定义：发起人字段来自模板变量，审批人字段固定为决策 */
+/** 1) 表单定义：通用字段 + 模板变量 + 审批决策 */
 function buildForm(ir, template) {
   // 优先用 IR 里的变量：它已经过占位符渲染（@varName@ -> amount）；
   // 模板原始变量还带着占位符，只能兜底。
   const irVars = (ir && ir.variables) || [];
   const vars = irVars.length > 0 ? irVars : ((template && template.variables) || []);
-  const fields = vars.map((v) => ({
-    id: v.name,
-    label: (v.description || v.name) + (v.type === 'list' ? '（多值，逗号分隔）' : ''),
-    type: v.type === 'number' ? 'long' : (v.type === 'boolean' ? 'boolean' : 'string'),
-    required: true
-  }));
+
+  // 任何一张申请单都要有的三样东西——真实表单不可能只有"金额"一个字段
+  const COMMON = [
+    { id: 'applySubject', label: '申请事由', type: 'textarea', required: true },
+    { id: 'applyDate', label: '申请日期', type: 'date', required: true },
+    { id: 'attachment', label: '附件（发票 / 合同 / 证明等）', type: 'attachment', required: false }
+  ];
+
+  // 类型映射：引擎/前端要认识具体控件，不能一律 string
+  const TYPE_MAP = {
+    number: 'long',
+    boolean: 'boolean',
+    date: 'date',
+    enum: 'select',
+    file: 'attachment',
+    text: 'textarea',
+    list: 'string'
+  };
+
+  const fields = COMMON.slice();
+  const seen = new Set(fields.map((f) => f.id));
+
+  for (const v of vars) {
+    if (seen.has(v.name)) continue;
+    const mapped = TYPE_MAP[v.type] || 'string';
+    const field = {
+      id: v.name,
+      label: v.description || v.name,
+      type: mapped,
+      required: v.required !== false
+    };
+    if (mapped === 'select' && Array.isArray(v.options)) field.options = v.options;
+    if (v.type === 'list') field.hint = '多值，逗号分隔';
+    fields.push(field);
+    seen.add(v.name);
+  }
 
   const approvalTasks = (ir.nodes || []).filter((n) => n.type === 'userTask');
   // 模板可能已经声明了 approved 变量，别重复添加
-  if (!fields.some((f) => f.id === APPROVE_VAR)) {
+  if (!seen.has(APPROVE_VAR)) {
     fields.push({
       id: APPROVE_VAR,
       label: '是否通过（false 时退回发起人）',
@@ -95,8 +125,13 @@ function buildForm(ir, template) {
   }
 
   return {
-    formKey: 'form_' + (ir.id || 'process'),
+    formKey: ir.formKey || ('form_' + (ir.id || 'process')),
     processName: ir.name || '',
+    engineBinding: {
+      formKey: ir.formKey || ('form_' + (ir.id || 'process')),
+      attachTo: '第一个用户任务（发起/提交）',
+      note: '引擎里把该任务的 formKey 指向此键即可渲染本表单；生成物已在提交任务上写好 flowable:formKey'
+    },
     fields: fields,
     taskCount: approvalTasks.length,
     note: '字段由模板变量推导；审批人提交时需带上 ' + APPROVE_VAR + ' 变量，否则默认按通过处理'

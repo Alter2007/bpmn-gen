@@ -27,6 +27,18 @@
       "name": "outbound",
       "type": "boolean",
       "description": "是否需要把印章带出公司使用"
+    },
+    {
+      "name": "sealCount",
+      "type": "number",
+      "required": true,
+      "description": "用印份数"
+    },
+    {
+      "name": "needDate",
+      "type": "date",
+      "required": false,
+      "description": "需要用印日期"
     }
   ],
   "nodes": [

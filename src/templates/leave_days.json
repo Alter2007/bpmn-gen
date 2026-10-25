@@ -42,6 +42,30 @@
       "name": "@varName@",
       "type": "number",
       "description": "请假天数"
+    },
+    {
+      "name": "leaveType",
+      "type": "enum",
+      "required": true,
+      "description": "请假类型",
+      "options": [
+        {
+          "value": "annual",
+          "label": "年假"
+        },
+        {
+          "value": "sick",
+          "label": "病假"
+        },
+        {
+          "value": "personal",
+          "label": "事假"
+        },
+        {
+          "value": "compensatory",
+          "label": "调休"
+        }
+      ]
     }
   ],
   "nodes": [
