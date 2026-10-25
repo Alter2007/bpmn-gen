@@ -894,6 +894,57 @@ function runZipUnit() {
   check('zip 里的 bpmn 与生成结果一致', bpmnEntry && bpmnEntry.content.toString() === r.xml);
 }
 
+// ---------------- 文档数字守卫 ----------------
+// README / PDF 里写着"400 项断言"，这个数字曾经连续三次过期（318→348→353→…）。
+// 所以让测试自己在跑完后拿文档里的数字比对实际通过数：对不上直接失败。
+// 注意：本函数故意不调用 check()，否则会改变"通过数"本身，形成自指死循环。
+function guardDocumentedNumbers() {
+  const docs = [
+    { file: path.join(__dirname, '..', 'README.md'), label: 'README' },
+    { file: path.join(__dirname, '..', 'docs', 'build-report.py'), label: 'PDF 生成脚本' }
+  ];
+  const problems = [];
+  for (const d of docs) {
+    if (!fs.existsSync(d.file)) continue;
+    const text = fs.readFileSync(d.file, 'utf8');
+    const m = /(\d+)\s*项断言/.exec(text);
+    if (!m) {
+      problems.push(d.label + ' 里找不到「N 项断言」');
+      continue;
+    }
+    const documented = Number(m[1]);
+    if (documented !== pass) {
+      problems.push(d.label + ' 写的是 ' + documented + ' 项，实际通过 ' + pass + ' 项');
+    }
+  }
+
+  // 模板数：加/删模板忘了改文档，这里也会抓出来
+  const tplCount = loadTemplates().length;
+  const tplDocs = [
+    { file: path.join(__dirname, '..', 'README.md'), label: 'README' },
+    { file: path.join(__dirname, '..', 'web', 'index.html'), label: '帮助页' },
+    { file: path.join(__dirname, '..', 'docs', 'build-report.py'), label: 'PDF 生成脚本' }
+  ];
+  for (const d of tplDocs) {
+    if (!fs.existsSync(d.file)) continue;
+    const text = fs.readFileSync(d.file, 'utf8');
+    const re = /(\d+)\s*个模板/g;
+    let m2;
+    let checked = 0;
+    while ((m2 = re.exec(text)) !== null) {
+      checked++;
+      const documented = Number(m2[1]);
+      if (documented !== tplCount) {
+        problems.push(d.label + ' 写的是 ' + documented + ' 个模板，实际 ' + tplCount + ' 个');
+        break;
+      }
+    }
+    if (checked === 0) problems.push(d.label + ' 里找不到「N 个模板」');
+  }
+
+  return problems;
+}
+
 function main() {
   console.log('BPMN 生成器测试套件');
   console.log('='.repeat(52));
@@ -915,6 +966,16 @@ function main() {
   runArtifactsUnit();
   runHelpPageUnit();
   runScriptHygiene();
+
+  // 文档数字守卫（不占断言名额，只在实际不一致时计入失败）
+  const docProblems = guardDocumentedNumbers();
+  if (docProblems.length > 0) {
+    for (const p of docProblems) {
+      fail++;
+      failures.push('文档数字过期: ' + p);
+      console.log('  [FAIL] 文档数字过期: ' + p);
+    }
+  }
 
   console.log('');
   console.log('='.repeat(52));
